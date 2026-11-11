@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Toronto Rapid Transit Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8eef3;--panel:#fff;--text:#10202e;--muted:#566574;--border:#c9d4de;--accent:#da291c;--water:#cfe0ec;--land:#e6e5de;--city:#f6f5f0;--road:#a3abb3;--l1:#e8b800;--l2:#00a651;--l4:#c0399e;--l5:#f07f1a;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1827;--panel:#12263a;--text:#eaf1f7;--muted:#9bb0c3;--border:#27415a;--accent:#ff5a4d;--water:#0b2236;--land:#142a3f;--city:#1b3550;--road:#56708a;--l1:#ffd21f;--l2:#2ed47a;--l4:#e070c6;--l5:#ff9a3d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a1827;--panel:#12263a;--text:#eaf1f7;--muted:#9bb0c3;--border:#27415a;--accent:#ff5a4d;--water:#0b2236;--land:#142a3f;--city:#1b3550;--road:#56708a;--l1:#ffd21f;--l2:#2ed47a;--l4:#e070c6;--l5:#ff9a3d;color-scheme:dark}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.5}
+*{box-sizing:border-box}
+.wrap{max-width:1400px;margin:0 auto;padding:24px 18px 40px}
+h1{font-size:clamp(2.2rem,6vw,4.2rem);line-height:1;margin:0 0 10px;font-weight:800;letter-spacing:-.03em;max-width:14ch}
+.sub{color:var(--muted);max-width:60ch;margin:0 0 22px;font-size:1.05rem}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+.card h2{font-size:1.1rem;margin:0 0 10px;font-weight:600}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;margin-top:16px;align-items:start}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:.9rem;font-weight:600;color:var(--text);background:transparent;border:2px solid var(--border);border-radius:999px;padding:5px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.chip i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.chip[aria-pressed="true"]{border-color:var(--text);background:var(--bg)}
+.chip:focus-visible,.st:focus-visible,select:focus-visible,.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mapwrap{overflow:auto;max-height:80vh;border-radius:10px;background:var(--water)}
+svg{display:block;max-width:none;height:auto}
+.land{fill:var(--land)}.city{fill:var(--city);stroke:var(--road);stroke-width:2.5;stroke-dasharray:9 6}
+.base{pointer-events:none}.rd{fill:none;stroke:var(--road);stroke-linecap:round;stroke-linejoin:round}.rdi{fill:none;stroke:var(--city);stroke-linecap:round;stroke-linejoin:round}
+.rl{font-size:12px;fill:var(--muted);paint-order:stroke;stroke:var(--city);stroke-width:3px}.gl{font-size:26px;font-style:italic;fill:var(--muted);opacity:.7;letter-spacing:.06em}
+.sc{fill:none;stroke:#c8202f;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s}.scb{pointer-events:none;transition:opacity .25s}.scb rect{fill:#c8202f}.scb text{fill:#fff;font-size:11px;font-weight:700}
+.ln{fill:none;stroke-width:11;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s}
+.st{cursor:pointer;transition:opacity .25s}
+.st circle{fill:var(--panel);stroke:var(--text);stroke-width:3}
+.st:hover circle{stroke:var(--accent);stroke-width:4}
+.st text,.upt{font-size:15px;font-weight:600;paint-order:stroke;stroke:var(--land);stroke-width:4px;stroke-linejoin:round}
+.st text{fill:var(--text)}
+.st.pick circle{fill:var(--accent);stroke:var(--accent)}
+.dim{opacity:.15}
+.halo{fill:none;stroke:var(--accent);stroke-width:20;opacity:.3;stroke-linecap:round;stroke-linejoin:round}
+.flow{fill:none;stroke:var(--text);stroke-width:4;stroke-dasharray:2 11;stroke-linecap:round;stroke-linejoin:round;animation:dash 1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-13}}
+@media(prefers-reduced-motion:reduce){.flow{animation:none}}
+.upl{fill:none;stroke-width:8;stroke-dasharray:4 11;stroke-linecap:round}
+#up{display:none}#up.show{display:inline}
+.upt{fill:var(--muted);font-style:italic}
+.ust{fill:var(--panel);stroke:var(--text);stroke-width:2.5;stroke-dasharray:3 3;cursor:pointer}
+.hint{font-size:.85rem;color:var(--muted);margin:8px 2px 0}
+.row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
+label{font-size:.8rem;color:var(--muted);display:block;margin-bottom:3px}
+select{width:100%;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+.btn{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 12px;background:var(--accent);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.alt{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.leg{display:flex;gap:10px;align-items:flex-start;margin:10px 0 0}
+.leg b{width:6px;align-self:stretch;border-radius:3px;flex:none}
+.total{font-size:1.9rem;font-weight:800;line-height:1.1;margin-top:12px}
+.total small{font-size:.9rem;font-weight:400;color:var(--muted)}
+.meta{color:var(--muted);font-size:.9rem}
+.up-item{margin:0 0 12px}
+p{margin:0 0 10px}
+.gol{fill:none;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s}
+.gost{cursor:pointer;transition:opacity .25s}
+.gost.pick rect{fill:var(--accent);stroke:var(--accent)}
+.ga{fill:none;stroke:var(--road);stroke-width:1.5;opacity:.5}
+.gs{fill:none;stroke:var(--road);stroke-width:.6;opacity:.22}
+.gost rect{fill:var(--panel);stroke:var(--text);stroke-width:2.5}
+.gost text{font-size:13px;font-weight:600;fill:var(--text);paint-order:stroke;stroke:var(--land);stroke-width:3.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ride Toronto’s rails</h1>
+  <p class="sub">A map of the rapid transit network, traced from the City of Toronto’s existing and future network map. Scroll the map, zoom in, and tap stations and lines.</p>
+  <div class="card">
+    <div class="bar">
+      <div class="chips" id="chips" role="group" aria-label="Filter by line"></div>
+      <div class="chips"><button class="btn alt" id="zout" aria-label="Zoom out">−</button><button class="btn alt" id="zfit">Fit</button><button class="btn alt" id="zin" aria-label="Zoom in">+</button></div>
+    </div>
+    <div class="mapwrap" id="mw"><svg id="map" viewBox="-760 -270 3900 1850" role="img" aria-label="Map of Toronto subway and light rail lines"></svg></div>
+    <p class="hint">Tap a station to set your start, then another for your destination. Dashed lines are planned or under construction.</p>
+  </div>
+  <div class="cards">
+    <div class="card">
+      <h2>Trip planner · TTC + GO</h2>
+      <div class="row">
+        <div><label for="from">From</label><select id="from"></select></div>
+        <button class="btn alt" id="swap" aria-label="Swap start and destination">⇄</button>
+        <div><label for="to">To</label><select id="to"></select></div>
+      </div>
+      <div id="result" aria-live="polite"></div>
+    </div>
+    <div class="card" id="stn" aria-live="polite"></div>
+    <div class="card" id="info" aria-live="polite"></div>
+    <div class="card">
+      <h2>Did you know?</h2>
+      <p id="fact"></p>
+      <button class="btn" id="more">Another fact</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px"><h2>Streetcar routes</h2>
+    <div class="chips" id="sc"></div><div id="scinfo" aria-live="polite" style="margin-top:12px"></div>
+    <p class="hint">Streetcars share the street with traffic, so diversions and bus replacements are common. Check ttc.ca for today’s service.</p></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const LD={
+1:{n:"Line 1 Yonge–University",c:"var(--l1)",
+ d:"M648 321 L642 372 L691 436 L712 466 L722 506 L754 561 L801 598 L822 684 L817 727 L816 775 L820 861 L870 953 L885 1003 L885 1033 L918 1041 L923 1068 L923 1143 L933 1189 L950 1157 V1041 L951 905 L958 860 L971 775 L982 680 L991 592 L1001 505",
+ s:"Vaughan MC,648,321,r;Highway 407,642,372,l;Pioneer Village,691,436,l;York University,712,466,r;Finch West,722,506,r;Downsview Park,754,561,r;Sheppard West,801,598,l;Wilson,822,684,r;Yorkdale,817,727,r;Lawrence West,816,775,l;Glencairn,817,808,l;Cedarvale,820,861,t;St Clair West,870,953,l;Dupont,885,1003,l;Spadina,885,1033,-;St George,918,1041,t;Museum,923,1068,l;Queen’s Park,923,1090,l;St Patrick,923,1115,l;Osgoode,923,1143,l;St Andrew,924,1162,l;Union,933,1189,b;King,950,1157,r;Queen,950,1143,r;Dundas,949,1115,r;College,949,1091,r;Wellesley,951,1073,r;Bloor-Yonge,950,1041,u;Rosedale,950,1012,r;Summerhill,950,978,r;St Clair,949,953,r;Davisville,951,905,r;Eglinton,958,860,u;Lawrence,971,775,r;York Mills,982,680,r;Sheppard-Yonge,991,592,l;North York Centre,996,560,r;Finch,1001,505,r",
+ m:"Vaughan Metropolitan Centre to Finch, 38 stations",t:"Toronto’s first subway, opened in 1954 under Yonge Street. Its U shape wraps around downtown, and it is the TTC’s busiest line."},
+2:{n:"Line 2 Bloor–Danforth",c:"var(--l2)",
+ d:"M397 1052 L447 1023 L495 1022 L553 1030 L589 1042 H1220 L1261 1048 L1310 1027 L1369 960 L1452 873",
+ s:"Kipling,397,1052,b;Islington,447,1023,t;Royal York,495,1022,t;Old Mill,553,1030,t;Jane,589,1042,b;Runnymede,619,1042,t;High Park,657,1041,b;Keele,680,1040,t;Dundas West,710,1040,b;Lansdowne,734,1043,t;Dufferin,764,1041,b;Ossington,795,1041,t;Christie,832,1041,b;Bathurst,858,1041,t;Spadina,885,1033,-;St George,918,1041,t;Bay,936,1041,b;Bloor-Yonge,950,1041,u;Sherbourne,985,1046,b;Castle Frank,1015,1046,t;Broadview,1052,1042,b;Chester,1076,1042,t;Pape,1101,1040,b;Donlands,1128,1042,t;Greenwood,1155,1042,b;Coxwell,1182,1042,t;Woodbine,1220,1042,b;Main Street,1261,1048,t;Victoria Park,1310,1027,b;Warden,1369,960,l;Kennedy,1452,873,b",
+ m:"Kipling to Kennedy, 31 stations",t:"The east–west line, opened in 1966. It crosses Line 1 twice, at St George and Bloor-Yonge."},
+4:{n:"Line 4 Sheppard",c:"var(--l4)",d:"M991 592 H1230",
+ s:"Sheppard-Yonge,991,592,l;Bayview,1074,592,t;Bessarion,1115,592,b;Leslie,1148,592,t;Don Mills,1230,593,r",
+ m:"Sheppard-Yonge to Don Mills, 5 stations",t:"The TTC’s shortest subway line. It opened in 2002 and links Yonge Street to the east side of North York."},
+5:{n:"Line 5 Eglinton",c:"var(--l5)",d:"M631 863 H1137 L1180 858 L1228 853 L1273 857 L1308 873 H1452",
+ s:"Mount Dennis,631,863,b;Keelesdale,677,862,t;Caledonia,715,862,b;Fairbank,768,861,t;Oakwood,796,861,b;Cedarvale,820,861,t;Forest Hill,860,861,t;Chaplin,889,861,b;Avenue,924,861,t;Eglinton,958,860,u;Mount Pleasant,989,861,b;Leaside,1037,862,t;Laird,1085,862,b;Sunnybrook Park,1137,861,t;Don Valley,1180,858,b;Aga Khan Park,1203,853,t;Wynford,1228,853,b;Sloane,1273,857,t;O’Connor,1308,873,b;Pharmacy,1325,873,t;Hakimi Lebovic,1343,873,b;Golden Mile,1362,873,t;Birchmount,1398,873,b;Ionview,1423,873,t;Kennedy,1452,873,b",
+ m:"Mount Dennis to Kennedy, 25 stops, light rail",t:"The Eglinton Crosstown opened on February 8, 2026, after years of delays. It runs mostly underground beneath Eglinton Avenue and connects Lines 1 and 2."},
+6:{n:"Line 6 Finch West",c:"#8a96a3",d:"M305 553 L347 527 L368 505 H722",
+ s:"Humber College,305,553,b;Westmore,347,527,l;Albion,370,503,t;Rowntree Mills,462,507,b;Signet Arrow,535,507,t;Jane and Finch,601,507,b;Finch West,722,506,r",
+ m:"Humber College to Finch West station, about 11 km, light rail (key stops shown)",t:"The Finch West LRT opened on December 7, 2025. It links Line 1 at Finch West station to Humber College in the northwest."}};
+const UP=[
+{n:"Ontario Line",c:"#e0569f",d:"M795 1172 L845 1137 H923 H950 L981 1135 L997 1152 L1065 1135 L1100 1095 L1101 1040 L1103 993 L1119 918 L1177 886",
+ s:"Exhibition,795,1172,b;King-Bathurst,845,1137,t;Queen-Spadina,868,1137,b;Moss Park,981,1135,t;Corktown,997,1152,b;Riverside-Leslieville,1065,1135,b;Gerrard,1100,1095,l;Cosburn,1103,993,r;Thorncliffe Park,1119,918,r;Flemingdon Park,1177,886,r",
+ t:"A new subway from Exhibition Place through downtown to Don Mills, connecting with Lines 1, 2 and 5. The official target is 2031, though Metrolinx’s CEO has said the early 2030s."},
+{n:"Yonge North Subway Extension",c:"var(--l1)",d:"M1001 505 L1010 415 L1015 370 L1025 299 L1054 230 L1051 210",
+ s:"Steeles,1010,415,r;Clark,1015,370,r;Royal Orchard,1025,299,r;Bridge,1054,230,l;High Tech,1051,210,r",
+ t:"Extends Line 1 about 8 km north from Finch into Richmond Hill. A tunnelling contract was awarded in 2025. It is meant to open after the Ontario Line, and reports in May 2026 suggest the mid-2030s."},
+{n:"Scarborough Subway Extension",c:"var(--l2)",d:"M1452 873 H1520 Q1546 855 1546 800 V615",
+ s:"Lawrence East,1543,787,r;Scarborough Centre,1543,690,r;Sheppard-McCowan,1545,615,r",
+ t:"Extends Line 2 about 7.8 km from Kennedy to Sheppard and McCowan with three new stops. Tunnelling passed halfway in March 2026. The official target is about 2030, but TTC emails reported in May 2026 point to 2033."},
+{n:"Eglinton Crosstown West Extension",c:"var(--l5)",d:"M631 863 L588 866 L545 855 L491 848 L445 847 L356 848 L275 846 L256 868 L238 845 L240 800 L222 765",
+ s:"Jane–Eglinton,588,866,b;Scarlett,545,855,t;Royal York–Eglinton,491,848,b;Islington–Eglinton,445,847,t;Kipling–Eglinton,356,848,b;Renforth,256,868,b",
+ t:"Extends Line 5 west from Mount Dennis toward Pearson Airport, entering Mississauga. It is planned for around 2031."},
+{n:"Waterfront West LRT",c:"#2f6fb3",d:"M320 1250 L495 1250 L520 1215 L560 1180 L585 1135",s:"Long Branch,320,1250,b",t:"A proposed light rail line along the western waterfront, from Long Branch toward the 501 Queen line. It is in preliminary design, with no opening date announced."},
+{n:"Waterfront East LRT",c:"#2f6fb3",d:"M933 1189 L1030 1195 L1130 1170",s:"East Harbour,1030,1195,b",t:"A proposed light rail line from Union Station east along the waterfront. It is in preliminary design, with no opening date announced."},
+{n:"Sheppard East Extension",c:"#c4a484",d:"M1230 593 L1300 618 L1545 615",s:"",
+ t:"A proposed extension of Line 4 east from Don Mills toward McCowan. It is still at the early planning stage on the City’s map, so no opening date has been announced."}];
+const SF={
+"Vaughan MC":"The north end of Line 1’s University side. It opened in December 2017 and was the first TTC subway station outside Toronto.",
+"Finch West":"Line 1 meets the Line 6 LRT here. The LRT opened in December 2025 and runs west to Humber College.",
+"Humber College":"The west end of Line 6, serving Humber College’s North Campus in Etobicoke.",
+"Sheppard West":"This station was called Downsview until 2017, when it was renamed as part of the extension to Vaughan.",
+"Cedarvale":"Known as Eglinton West until December 2025. It became an interchange with Line 5 when the Crosstown opened in 2026.",
+"St George":"A major crossing of Line 1 and Line 2, right beside the University of Toronto.",
+"Queen’s Park":"Named for the park around Ontario’s legislature, which sits just above the station.",
+"Osgoode":"Named for nearby Osgoode Hall. The planned Ontario Line is to stop here.",
+"Union":"Toronto’s main rail hub, where Line 1 meets GO Transit, VIA Rail and the UP Express.",
+"King":"Anchors the Financial District, with the 504 King streetcar running above.",
+"Dundas":"A short walk from the Eaton Centre and Sankofa Square, formerly called Yonge–Dundas Square.",
+"Bloor-Yonge":"Where Line 1 and Line 2 cross, and the system’s busiest interchange. A platform expansion is planned to ease crowding.",
+"Eglinton":"Line 1 connects with Line 5 here, which opened in February 2026.",
+"Sheppard-Yonge":"The only place to transfer to Line 4, which runs east to Don Mills.",
+"Finch":"The north end of Line 1’s Yonge branch. The Yonge North Subway Extension would continue the line toward Richmond Hill.",
+"Kipling":"The west end of Line 2, with connections to GO Transit and Mississauga buses.",
+"High Park":"Beside High Park, and the west terminus loop for the 506 Carlton streetcar.",
+"Bay":"Below the Line 2 platforms is an unused lower platform from the 1960s, now used as a film location.",
+"Broadview":"A streetcar hub: the 504 King and 505 Dundas routes run to this station.",
+"Victoria Park":"The 503 Kingston Road streetcar route begins here and heads toward downtown.",
+"Kennedy":"Line 2 and Line 5 meet at this eastern terminal, which also has GO Transit service. The Scarborough Subway Extension will continue Line 2 from here.",
+"Don Mills":"The east end of Line 4, next to Fairview Mall and a bus terminal.",
+"Mount Dennis":"The west end of Line 5. The line runs above ground here before dropping underground.",
+"Yorkdale":"Serves Yorkdale Shopping Centre, one of the city’s big malls.",
+"Dundas West":"A Line 2 interchange for GO Transit and UP Express service nearby.",
+"Downsview Park":"Opened in 2017 and sits beside the former Downsview airfield lands."};
+const FACTS=["Line 1 opened on March 30, 1954, making it Canada’s first subway.",
+"At Bay station, an unused lower platform still sits below the active one. Film crews use it as a stand-in for other cities.",
+"Toronto’s red streetcars and buses earned the nickname “Red Rocket”.",
+"Kennedy station is where Line 2 and Line 5 meet, so the Eglinton Crosstown connects to both Line 1 and Line 2.",
+"Bloor-Yonge is the busiest interchange in the system, where Line 1 and Line 2 cross."];
+const ST=[
+["501","Queen","Along Queen Street across the city, from the west end to the Beaches.","One of the longest streetcar routes in North America."],
+["503","Kingston Road","Victoria Park Station to York Street downtown.","Follows Kingston Road through the east end before joining Queen."],
+["504","King","Dundas West Station to Broadview Station via King Street.","Often the TTC’s busiest surface route, with traffic priority along King downtown."],
+["505","Dundas","Dundas West Station to Broadview Station along Dundas Street.","Passes Chinatown and the Art Gallery of Ontario."],
+["506","Carlton","High Park Loop to Main Street Station via College and Carlton.","Runs through Little Italy and past the University of Toronto."],
+["507","Long Branch","Long Branch Loop to Humber Loop along Lake Shore.","Replaced by buses from June 2026 during construction at Long Branch Loop."],
+["509","Harbourfront","Union Station to Exhibition Loop along Queens Quay and Fleet Street.","Serves the waterfront and the Exhibition grounds, home of the CNE."],
+["510","Spadina","Spadina Station to Queens Quay along Spadina Avenue.","Runs in its own right-of-way through Chinatown to the lakeshore. Its turnback point has shifted recently."],
+["511","Bathurst","Bathurst Station to Exhibition Loop.","Connects Bloor Street with the waterfront and joins the 509 at Bathurst and Fleet."],
+["512","St. Clair","Gunns Loop to St. Clair Station along St. Clair Avenue West.","Runs in a dedicated right-of-way, built after a long public debate."]];
+
+// parse
+const L={},P={},PU={},keys=Object.keys(LD);
+const OFF={r:[15,5,"start"],l:[-15,5,"end"],t:[0,-14,"middle"],b:[0,26,"middle"],u:[13,-13,"start"]};
+const rows=s=>s?s.split(";").map(r=>{const a=r.split(",");return[a[0],+a[1],+a[2],a[3]]}):[];
+keys.forEach(k=>{L[k]={...LD[k],s:[]};rows(LD[k].s).forEach(([n,x,y,c])=>{L[k].s.push(n);if(!P[n])P[n]=[x,y,c]})});
+UP.forEach((u,i)=>rows(u.s).forEach(([n,x,y,c])=>{if(!P[n])PU[n]=[x,y,c,i]}));
+let sel=null,fi=0,nextFrom=true,z=1500;
+const HW=["M-120 640 L-250 800 L-420 960 L-640 1060 L-760 1100","M-180 640 L-200 400 L-240 250 L-250 -270","M420 708 L300 735 L190 780 L100 830","M-760 520 L-250 560 L0 600 L205 648 L420 708 L610 706 L822 684 L1000 650 L1165 612 L1330 625 L1550 640 L1930 600 L2260 520 L2600 520 L3140 480","M205 -150 L215 130 L230 420 L235 620 L270 800 L316 985 L330 1130 L300 1160","M600 -270 L500 130 L520 300 L545 420 L565 520 L580 620 L610 706","M1262 -270 L1262 130 L1258 420 L1252 560 L1195 640 L1185 760 L1170 850 L1135 930 L1105 1010 L1062 1110 L1048 1168","M-760 1450 L-300 1380 L0 1330 L150 1250 L300 1160 L520 1140 L690 1150 L800 1180 L940 1205 L1030 1190 L1048 1170","M-760 300 L-200 280 L200 262 L640 245 L1100 245 L1600 265 L2260 250 L3140 220"];
+const SR=["M205 418 L1930 398","M205 506 H1930","M205 585 L840 594 L991 592 L1230 593 L1545 615 L1930 614","M205 692 H1930","M205 775 L971 775 L1395 785 L1930 790","M205 866 L631 863 H1137 L1180 858 L1228 853 L1273 857 L1308 873 H1452 L1750 878 L1930 880","M205 954 L949 953 L1360 957 L1450 968","M589 418 V1042","M680 418 V1040","M764 418 V1041","M835 418 L850 700 L858 1041 V1160","M1110 -270 L1054 150 L1025 299 L1010 415 L1001 505 L991 592 L982 680 L971 775 L958 860 L949 953 L950 1189","M1230 418 L1228 593 L1180 760 L1150 900","M1310 418 V1027","M1452 418 V873 L1440 1000","M1545 418 V820","M1250 1088 L1460 975 L1700 905","M520 418 L545 700 L560 772 L631 863","M300 1225 L500 1190 L600 1165 L800 1190 L933 1205 L1048 1195 L1150 1160"];
+const RW=[...HW.map(d=>[d,7]),...SR.map(d=>[d,2.2])];
+const RL=[["Steeles Ave",330,412,0],["Finch Ave",860,500,0],["Sheppard Ave",640,579,0],["Lawrence Ave",1300,783,0],["Eglinton Ave",1600,872,0],["St Clair Ave",1180,949,0],["Highway 401",1100,630,-8],["Highway 400",556,540,-84],["Hwy 404 / DVP",1274,300,-90],["Highway 427",246,330,-90],["Gardiner Expressway",560,1134,0],["Highway 407",900,236,0],["QEW",150,1240,-30],["Yonge St",1038,420,-84],["Kingston Rd",1560,930,-28],["Lake Shore Blvd",700,1186,10]];
+const GL=[["Brampton",-420,200],["Mississauga",-300,1000],["Oakville",-560,1330],["Burlington",-700,1440],["Milton",-700,420],["Ajax",2400,560],["Whitby",2700,500],["Vaughan",680,260],["Richmond Hill",1100,180],["Markham",1650,260],["Pickering",2000,470],["Etobicoke",300,780],["North York",1080,735],["Scarborough",1640,990]];
+const GOL=[
+{n:"Lakeshore West",c:"#8c1c3a",pre:["Union"],d:"M933 1189 L795 1175 L700 1170 L545 1190 L430 1215 L318 1247 L180 1285 L60 1315 L-120 1370 L-340 1430 L-440 1460 L-550 1485 L-650 1505 L-740 1520",e:["to Hamilton",-740,1550,"start"],s:"Exhibition,812,1182,b;Mimico,500,1192,b;Long Branch,318,1249,b;Port Credit,60,1317,b;Clarkson,-120,1372,b;Oakville,-340,1432,b;Bronte,-440,1462,b;Appleby,-550,1487,b;Burlington,-650,1507,b;Aldershot,-740,1522,b"},
+{n:"Lakeshore East",c:"#e8506a",pre:["Union"],d:"M933 1189 L1030 1176 L1130 1170 L1200 1100 L1275 1070 L1456 962 L1568 873 L1700 835 L1965 788 L2200 705 L2400 662 L2600 620 L2850 578",e:["to Niagara via Oshawa",2850,550,"end"],s:"East Harbour,1130,1170,b;Danforth,1275,1070,b;Scarborough,1456,962,b;Eglinton,1568,873,t;Guildwood,1700,835,t;Rouge Hill,1965,788,t;Pickering,2200,705,t;Ajax,2400,662,t;Whitby,2600,620,t;Oshawa,2850,578,t"},
+{n:"Kitchener",c:"#2f9e44",pre:["Union"],d:"M933 1189 L800 1160 L740 1100 L722 1068 L710 1040 L631 863 L558 772 L405 702 L295 670 L205 640 L-30 500 L-330 350 L-470 300 L-600 250 L-740 150",e:["to Kitchener",-740,120,"start"],s:"Bloor,722,1070,r;Mount Dennis,646,878,r;Weston,558,772,t;Etobicoke North,405,702,t;Malton,-30,500,t;Bramalea,-330,350,t;Brampton,-470,300,t;Mount Pleasant,-600,250,t;Georgetown,-740,150,t"},
+{n:"Barrie",c:"#2457a6",pre:["Union","Bloor GO"],d:"M722 1068 L715 862 L754 561 L775 261 L790 70 L795 -190 L800 -260",e:["to Barrie",810,-250,"start"],s:"Downsview Park,764,575,r;Rutherford,775,261,r;Maple,790,70,r;King City,795,-190,r"},
+{n:"Milton",c:"#b86e1b",pre:["Union"],d:"M933 1189 L800 1158 L700 1112 L560 1072 L418 1062 L200 1100 L0 1060 L-170 985 L-330 880 L-440 800 L-540 745 L-740 560",e:["to Milton",-740,530,"start"],s:"Kipling,418,1062,t;Dixie,200,1100,b;Cooksville,-30,1050,b;Erindale,-170,985,b;Streetsville,-330,880,b;Meadowvale,-440,800,b;Lisgar,-540,745,b;Milton,-740,560,b"},
+{n:"Richmond Hill",c:"#1aa6c7",pre:["Union"],d:"M933 1189 L1030 1176 L1100 1100 L1150 950 L1170 700 L1148 598 L1168 487 L1180 415 L1160 300 L1155 90 L1170 -100 L1200 -260",e:["to Gormley",1215,-250,"start"],s:"Oriole,1155,600,l;Old Cummer,1170,487,l;Langstaff,1160,300,l;Richmond Hill,1155,90,l;Gormley,1200,-260,l"},
+{n:"Stouffville",c:"#7a5a3a",pre:["Union","Danforth GO","Scarborough GO"],d:"M1275 1070 L1456 962 L1470 880 L1458 612 L1445 415 L1465 200 L1520 80 L1600 -20 L1750 -120 L1800 -230",e:["to Lincolnville",1815,-225,"start"],s:"Kennedy,1478,888,r;Agincourt,1462,612,r;Milliken,1445,415,r;Unionville,1465,200,r;Centennial,1490,140,r;Markham,1530,70,r;Mount Joy,1590,-10,r;Stouffville,1760,-130,r;Lincolnville,1800,-230,r"}];
+const PG={};GOL.forEach((g,i)=>{g.names=g.pre.slice();rows(g.s).forEach(([n,x,y,c])=>{const k=n+" GO";g.names.push(k);if(!PG[k])PG[k]=[x,y,c,i]})});
+PG["Union GO"]=[945,1196,"-",0];GOL.forEach(g=>{g.names=g.names.map(n=>n==="Union"?"Union GO":n)});
+const GOH='<g id="go">'+GOL.map(g=>`<path class="gol" d="${g.d}" stroke="${g.c}"/>`).join("")+GOL.map(g=>`<text class="upt gol-t" x="${g.e[1]}" y="${g.e[2]}" text-anchor="${g.e[3]}" style="font-size:14px">${g.e[0]}</text>`).join("")+Object.entries(PG).map(([n,[x,y,c]])=>`<g class="gost" data-gs="${n}" tabindex="0" role="button" aria-label="${n}"><title>${n}</title><rect x="${x-6}" y="${y-6}" width="12" height="12" rx="2"/>${OFF[c]?`<text x="${x+OFF[c][0]}" y="${y+OFF[c][1]-2}" text-anchor="${OFF[c][2]}">${n.replace(" GO","")}</text>`:""}</g>`).join("")+'</g>';
+const AT={Union:"Front Street at Bay and York streets","St George":"Bloor Street at St George Street","Bloor-Yonge":"Yonge Street at Bloor Street","Sheppard-Yonge":"Yonge Street at Sheppard Avenue",Kennedy:"Eglinton Avenue East at Kennedy Road",Kipling:"Bloor Street at Kipling Avenue",Finch:"Yonge Street at Finch Avenue","Vaughan MC":"near Jane Street and Highway 7"};
+[["Yonge Street",["Dundas","College","Wellesley","Queen","King","Eglinton","Lawrence","York Mills","Davisville","St Clair"]],["Bloor Street",["Keele","High Park","Runnymede","Jane","Islington","Lansdowne","Dufferin","Ossington","Christie","Bathurst","Spadina","Bay"]],["Danforth Avenue",["Broadview","Pape","Donlands","Greenwood","Coxwell","Woodbine","Victoria Park"]],["Eglinton Avenue",["Oakwood","Caledonia","Chaplin","Mount Pleasant","Laird","Wynford","Sloane","O’Connor","Pharmacy","Birchmount","Ionview"]],["Sheppard Avenue East",["Bayview","Leslie","Don Mills","Bessarion"]]].forEach(([st,a])=>a.forEach(n=>AT[n]=st+" at "+n));
+AT["Avenue"]="Eglinton Avenue at Avenue Road";AT["High Park"]="Bloor Street at High Park Avenue";
+const HUB={
+"Union":[["Overview","Union is the busiest hub in Toronto’s transit network, where Line 1 meets GO Transit, VIA Rail and the UP Express. The subway station opened in 1954 with the original Yonge line, beneath the much older Union Station building, which opened in 1927."],["Inside the station","The subway platforms sit at the bottom of Line 1’s U shape, so trains arrive from both the Yonge and University sides. Above them are the rail concourses, the PATH walkways and the Great Hall, whose tall coffered ceiling and stone walls make it one of the city’s grandest interiors. The station has been enlarged and reworked in recent years to handle the crowds."],["Around the station","Scotiabank Arena, Rogers Centre, the CN Tower and the Financial District are all a short walk away, largely through the PATH. Streetcars on the 509 Harbourfront and 510 Spadina routes use the station, and most GO lines start here."]],
+"Bloor-Yonge":[["Overview","Bloor-Yonge is where Line 1 and Line 2 cross, at the corner of Yonge and Bloor streets. The Yonge platforms opened in 1954 and the Bloor–Danforth platforms followed in 1966, making it the busiest interchange on the subway."],["Inside the station","Each line has its own platforms, linked by stairs, escalators and elevators, and peak-hour crowding is a long-standing problem. The TTC has been planning a major platform expansion to give passengers more room and speed up transfers."],["Around the station","The station sits between the Bloor-Yorkville shopping district and the shops of Yonge Street. Rosedale’s leafy streets are to the north, and Church-Wellesley is a short walk south and east."]],
+"St George":[["Overview","St George serves the University of Toronto’s downtown campus at Bloor Street and St George Street. The Line 1 platforms opened in 1963 and Line 2 arrived in 1966, creating a key interchange for west-end riders."],["Inside the station","Both lines have their own platforms, joined by corridors, stairs and elevators. Line 1’s University branch runs south toward Queen’s Park and downtown, while Line 2 carries riders east and west along Bloor."],["Around the station","The Annex neighbourhood lies to the west, and the Royal Ontario Museum and Bata Shoe Museum are close by. Spadina Avenue and Chinatown are a short ride south."]],
+"Kennedy":[["Overview","Kennedy is the eastern end of both Line 2 and Line 5, in Scarborough at Eglinton Avenue and Kennedy Road. The Line 2 station opened in 1980. Until 2023 it also served the Scarborough RT, which has since closed."],["Inside the station","Line 5 Eglinton trains meet the subway here, and a large bus terminal plus a link to the GO Stouffville line make it a major transfer point in the east end."],["Around the station","The area is a mix of commercial streets and neighbourhoods. The Scarborough Subway Extension is planned to carry Line 2 north from here toward Scarborough Centre and Sheppard."]],
+"Finch":[["Overview","Finch is the north end of Line 1’s Yonge branch, at Yonge Street and Finch Avenue in North York. It opened in 1974 and is one of the system’s busiest terminals."],["Inside the station","A large bus terminal sits beside the platforms and handles TTC and regional buses heading north into York Region, so the station works as a gateway between Toronto and Richmond Hill, Markham and beyond."],["Around the station","Yonge Street runs north toward Steeles. The planned Yonge North Subway Extension would take Line 1 past Toronto’s boundary into Richmond Hill."]],
+"Vaughan MC":[["Overview","Vaughan Metropolitan Centre opened in December 2017 as the northern end of Line 1’s University branch. It was the first TTC subway station outside Toronto’s boundaries."],["Inside the station","The station anchors a bus terminal where Viva and York Region Transit routes meet the subway, so riders can switch from bus to train under one roof."],["Around the station","A new downtown is rising around it, with condominium towers, offices and parks, close to Highway 7 and Highway 400."]],
+"Kipling":[["Overview","Kipling is the west end of Line 2, at Bloor Street and Kipling Avenue in Etobicoke. It opened in 1980 as part of the extension of the Bloor–Danforth line."],["Inside the station","A large bus terminal connects TTC buses with MiWay in Mississauga, and Kipling GO station sits beside it on the Milton line, making the site a major regional transfer point."],["Around the station","The surrounding Islington-City Centre West area has seen tall residential development, and Mississauga lies just to the west."]],
+"Sheppard-Yonge":[["Overview","Sheppard-Yonge is at the heart of North York Centre, at Yonge Street and Sheppard Avenue. It opened with the Yonge line extension in 1974, and Line 4 arrived in 2002."],["Inside the station","Line 4 has its own platform, linked to Line 1 by stairs and escalators, and this is the only place to transfer between the two lines."],["Around the station","Sheppard Centre, an office and retail complex, sits directly above the station, and Mel Lastman Square and North York’s tower district are a short walk north."]]};
+const LANDD="M-760 -270 H3140 V520 L2850 570 L2600 610 L2400 650 L2200 690 L2045 735 L1960 800 L1840 845 L1690 835 L1600 915 L1470 975 L1330 1040 L1210 1100 L1140 1180 L1030 1215 L930 1215 L800 1195 L700 1155 L600 1190 L500 1262 L330 1290 L200 1345 L0 1400 L-250 1450 L-500 1495 L-760 1535 Z";
+let ga="",gs="";for(let x=-1000;x<=3300;x+=86)ga+=`M${x} -500V1700`;for(let y=-500;y<=1700;y+=86)ga+=`M-1000 ${y}H3300`;
+for(let x=-1000;x<=3300;x+=22)gs+=`M${x} -500V1700`;for(let y=-500;y<=1700;y+=22)gs+=`M-1000 ${y}H3300`;
+const GRIDH=`<clipPath id="lc"><path d="${LANDD}"/></clipPath><g clip-path="url(#lc)"><g transform="rotate(-2 1100 650)"><path class="gs" d="${gs}"/><path class="ga" d="${ga}"/></g></g>`;
+const RID={1:"About 625,000 riders on an average weekday (12 months to August 2024), making it the busiest rapid transit line in Canada.",2:"About 460,800 riders a day (November 2025).",4:"About 38,700 riders on an average weekday (2023–24).",5:"Too new for a full-year figure. It opened on February 8, 2026.",6:"Too new for a full-year figure. It opened on December 7, 2025."};
+const HIST={1:"Built in stages. The Yonge section from Union to Eglinton opened on March 30, 1954. The University section to St George followed on February 28, 1963, the Yonge line was extended north in 1973 and 1974, and the Spadina section to Wilson opened on January 28, 1978. North York Centre was added in 1987, Downsview (now Sheppard West) in 1996, and the extension to Vaughan in December 2017.",2:"Opened in February 1966, first between Keele and Woodbine, then extended in 1968 (to Islington and Warden) and in 1980 (to Kipling and Kennedy).",4:"Opened in 2002. It stayed Toronto’s newest subway line until the Vaughan extension opened in 2017.",5:"Opened on February 8, 2026 after years of construction delays.",6:"Opened on December 7, 2025."};
+const OP={};const sec=(k,y,d,n)=>n.split(",").forEach(x=>OP[k+"|"+x]=[y,d]);
+sec(1,1954,"the original Yonge subway from Union to Eglinton, which opened on March 30, 1954 as Canada’s first subway","Union,King,Queen,Dundas,College,Wellesley,Bloor-Yonge,Rosedale,Summerhill,St Clair,Davisville,Eglinton");
+sec(1,1963,"the University subway, which opened on February 28, 1963","St Andrew,Osgoode,St Patrick,Queen’s Park,Museum,St George");
+sec(1,1973,"the Yonge extension north of Eglinton that opened in 1973","Lawrence,York Mills");
+sec(1,1974,"the Yonge extension to Finch, completed in 1974","Sheppard-Yonge,Finch");
+sec(1,1987,"an infill station added between Sheppard and Finch on June 18, 1987","North York Centre");
+sec(1,1978,"the Spadina subway, which opened on January 28, 1978","Spadina,Dupont,St Clair West,Cedarvale,Glencairn,Lawrence West,Yorkdale,Wilson");
+sec(1,1996,"the 1996 extension north of Wilson","Sheppard West");
+sec(1,2017,"the Toronto–York Spadina extension, which opened in December 2017","Downsview Park,Finch West,York University,Pioneer Village,Highway 407,Vaughan MC");
+sec(2,1966,"the first Bloor–Danforth section between Keele and Woodbine, which opened in February 1966","Keele,Dundas West,Lansdowne,Dufferin,Ossington,Christie,Bathurst,Spadina,St George,Bay,Bloor-Yonge,Sherbourne,Castle Frank,Broadview,Chester,Pape,Donlands,Greenwood,Coxwell,Woodbine");
+sec(2,1968,"the 1968 extensions west to Islington and east to Warden","High Park,Runnymede,Jane,Old Mill,Royal York,Islington,Main Street,Victoria Park,Warden");
+sec(2,1980,"the 1980 extensions to Kipling and Kennedy","Kipling,Kennedy");
+sec(4,2002,"the Sheppard subway, which opened in 2002","Sheppard-Yonge,Bayview,Bessarion,Leslie,Don Mills");
+const hist=(s,ks)=>ks.map(k=>{const o=OP[k+"|"+s];const t=o?`This station opened in ${o[0]} as part of ${o[1]}.`:k==="5"?"This station opened with the Eglinton Crosstown on February 8, 2026.":k==="6"?"This station opened with the Finch West LRT on December 7, 2025.":"";return t?`<p><strong>History${ks.length>1?" (Line "+k+")":""}.</strong> ${t}</p>`:""}).join("");
+const RS={"Bloor-Yonge":"In 2017 the TTC estimated about 204,600 daily trips to and from Line 1 trains here and about 186,900 on the Line 2 side.","St George":"In 2017 the TTC estimated about 132,400 daily trips on the Line 2 side and 126,000 on Line 1.","Union":"In 2017 the TTC estimated about 118,400 daily trips to and from the subway platforms."};
+const GH=g=>g.n.startsWith("Lakeshore")?"GO Transit launched on May 23, 1967 with trains along the Lakeshore corridor, and the "+g.n+" line is part of that original route.":"The "+g.n+" corridor was added to the GO network after the original 1967 Lakeshore service.";
+const ALL={};keys.forEach(k=>ALL[k]={n:L[k].n,s:L[k].s,go:0});GOL.forEach((g,i)=>ALL["G"+i]={n:"GO "+g.n,s:g.names,go:1});
+const XY=n=>P[n]||PG[n];
+const TRM={};[["Union GO","Union"],["Kipling GO","Kipling"],["Mount Dennis GO","Mount Dennis"],["Bloor GO","Dundas West"],["Danforth GO","Main Street"],["Kennedy GO","Kennedy"],["Downsview Park GO","Downsview Park"],["Oriole GO","Leslie"]].forEach(([a,b])=>{(TRM[a]=TRM[a]||[]).push(b);(TRM[b]=TRM[b]||[]).push(a)});
+const BASE='<g class="base">'+RW.map(([d,w])=>`<path class="rd" d="${d}" stroke-width="${w+3}"/>`).join("")+RW.map(([d,w])=>`<path class="rdi" d="${d}" stroke-width="${w}"/>`).join("")+RL.map(([t,x,y,r])=>`<text class="rl" x="${x}" y="${y}" transform="rotate(${r} ${x} ${y})">${t}</text>`).join("")+GL.map(([t,x,y])=>`<text class="gl" x="${x}" y="${y}">${t}</text>`).join("")+'</g>';
+const SC=[["501","M585 1135 L660 1120 L730 1125 L800 1140 L880 1143 L950 1143 L1010 1143 L1052 1125 L1182 1112 L1245 1080 L1268 1058",660,1108],["507","M320 1250 L420 1236 L520 1196 L585 1135",430,1224],["503","M1310 1027 L1285 1050 L1245 1080 L1182 1112 L1052 1125 L1010 1143 L930 1143",1300,1015],["504","M710 1040 L715 1095 L735 1140 L800 1152 L880 1157 L950 1157 L1010 1160 L1040 1138 L1052 1120 L1052 1042",735,1170],["505","M710 1040 L730 1070 L800 1092 L880 1108 L950 1115 L1010 1114 L1052 1100",800,1080],["506","M657 1041 L690 1075 L800 1085 L880 1090 L949 1091 L1000 1088 L1060 1085 L1150 1085 L1215 1068 L1261 1048",1150,1100],["509","M933 1189 L890 1197 L840 1192 L800 1178 L795 1172",840,1210],["510","M885 1036 V1190 L933 1189",905,1120],["511","M858 1041 V1160 L845 1178 L800 1176",838,1100],["512","M870 953 L760 953 L650 950",720,940]];
+const SCH=SC.map(([r,d])=>`<path class="sc" data-r="${r}" d="${d}"/>`).join("")+SC.map(([r,,x,y])=>`<g class="scb" data-r="${r}"><rect x="${x-13}" y="${y-10}" width="26" height="15" rx="3"/><text x="${x}" y="${y+2}" text-anchor="middle">${r}</text></g>`).join("");
+
+// draw
+let h=`<path class="land" d="M-760 -270 H3140 V520 L2850 570 L2600 610 L2400 650 L2200 690 L2045 735 L1960 800 L1840 845 L1690 835 L1600 915 L1470 975 L1330 1040 L1210 1100 L1140 1180 L1030 1215 L930 1215 L800 1195 L700 1155 L600 1190 L500 1262 L330 1290 L200 1345 L0 1400 L-250 1450 L-500 1495 L-760 1535 Z"/>${GRIDH}<path class="city" d="M205 420 L1930 395 L1930 811 L1840 845 L1690 835 L1600 915 L1470 975 L1330 1040 L1210 1100 L1140 1180 L1030 1215 L930 1215 L800 1195 L700 1155 L600 1190 L500 1262 L330 1290 L300 1225 L205 1100 Z"/>${BASE}<text class="upt" x="640" y="1300" style="font-size:20px">Lake Ontario</text>`;
+keys.forEach(k=>h+=`<path class="ln" data-l="${k}" d="${L[k].d}" stroke="${L[k].c}"/>`);
+h+='<g id="up">'+UP.map(u=>`<path class="upl" d="${u.d}" stroke="${u.c}"/>`).join("")+
+ Object.entries(PU).map(([n,[x,y,c]])=>`<g class="us" data-u="${n}" tabindex="0" role="button" aria-label="${n}"><title>${n}</title><circle class="ust" cx="${x}" cy="${y}" r="6"/>${OFF[c]?`<text class="upt" x="${x+OFF[c][0]}" y="${y+OFF[c][1]}" text-anchor="${OFF[c][2]}">${n}</text>`:""}</g>`).join("")+'</g>';
+h+=SCH+GOH+'<g id="route"></g>';
+for(const s in P){const [x,y,c]=P[s],ls=keys.filter(k=>L[k].s.includes(s)),o=OFF[c];
+ h+=`<g class="st" data-s="${s}" data-ls="${ls.join(",")}" tabindex="0" role="button" aria-label="${s}"><title>${s}</title><circle cx="${x}" cy="${y}" r="${ls.length>1?9:6}"/>${o?`<text x="${x+o[0]}" y="${y+o[1]}" text-anchor="${o[2]}">${s}</text>`:""}</g>`}
+$("#map").innerHTML=h;
+const fit=()=>{z=Math.max(900,$("#mw").clientWidth);$("#map").style.width=z+"px"};
+const zoom=f=>{z=Math.min(7000,Math.max(900,z*f));$("#map").style.width=z+"px"};
+const init=()=>{z=3200;$("#map").style.width=z+"px";const m=$("#mw"),k=z/3900;m.scrollLeft=1860*k-m.clientWidth/2;m.scrollTop=1000*k-m.clientHeight/2};init();
+$("#zin").onclick=()=>zoom(1.25);$("#zout").onclick=()=>zoom(.8);$("#zfit").onclick=fit;
+
+$("#chips").innerHTML=`<button class="chip" data-l="" aria-pressed="true">All lines</button>`+keys.map(k=>`<button class="chip" data-l="${k}" aria-pressed="false"><i style="background:${L[k].c}"></i>Line ${k}</button>`).join("")+`<button class="chip" data-l="go" aria-pressed="false"><i style="background:#8c1c3a"></i>GO Transit</button><button class="chip" data-l="sc" aria-pressed="false"><i style="background:#c8202f"></i>Streetcars</button><button class="chip" data-l="up" aria-pressed="false"><i style="border:2px dashed var(--text)"></i>Upcoming</button>`;
+const names=Object.keys(P).sort();
+["from","to"].forEach(id=>$("#"+id).innerHTML=names.map(n=>`<option>${n}</option>`).join(""));
+$("#from").value="Mount Dennis";$("#to").value="Don Mills";
+
+function pickLine(k){
+ sel=k||null;
+ document.querySelectorAll(".chip[data-l]").forEach(c=>c.setAttribute("aria-pressed",c.dataset.l===(k||"")));
+ document.querySelectorAll(".ln").forEach(e=>e.classList.toggle("dim",sel==="sc"||sel==="go"||(!!L[sel]&&e.dataset.l!==sel)));
+ document.querySelectorAll(".st").forEach(e=>e.classList.toggle("dim",sel==="sc"||sel==="go"||(!!L[sel]&&!e.dataset.ls.split(",").includes(sel))));
+ $("#up").classList.toggle("show",sel==="up");
+ document.querySelectorAll(".sc,.scb").forEach(e=>e.classList.toggle("dim",!!L[sel]||sel==="go"));
+ document.querySelectorAll(".gol,.gol-t,.gost").forEach(e=>e.classList.toggle("dim",!!L[sel]||sel==="sc"));
+ info();
+}
+function info(){
+ const el=$("#info");
+ if(sel==="go"){el.innerHTML=`<h2>GO Transit</h2>`+GOL.map(g=>`<p class="up-item"><strong style="border-bottom:4px solid ${g.c}">${g.n}</strong><br><span class="meta">${g.s.split(";").map(r=>r.split(",")[0]).join(", ")}</span></p>`).join("")+`<p class="meta">Stations are placed using the GO system map. Positions outside Toronto are approximate.</p>`;return}
+ if(sel==="sc"){el.innerHTML=`<h2>Streetcar network</h2>`+ST.map(r=>`<p class="up-item"><strong>${r[0]} ${r[1]}</strong><br><span class="meta">${r[2]}</span></p>`).join("")+`<p class="meta">Routes are drawn approximately along their streets.</p>`;return}
+ if(sel==="up"){el.innerHTML=`<h2>Coming soon</h2>`+UP.map(u=>`<p class="up-item"><strong style="border-bottom:4px dashed ${u.c}">${u.n}</strong><br>${u.t}</p>`).join("")+`<p class="meta">Dates are projections and often change.</p>`;return}
+ if(!sel){el.innerHTML=`<h2>The network</h2><p class="meta">Five rapid transit lines, drawn to follow the City of Toronto’s network map. Choose a line above to see its story, ridership and stations, or Upcoming to show planned lines.</p><p class="meta">The subway carried about 331.8 million rides in 2025, or roughly 1.09 million per weekday in the second quarter of 2026.</p>`;return}
+ const l=L[sel];
+ el.innerHTML=`<h2><span style="border-bottom:5px solid ${l.c}">${l.n}</span></h2><p class="meta">${l.m}</p><p>${l.t}</p><p><strong>Construction.</strong> ${HIST[sel]}</p><p><strong>Ridership.</strong> ${RID[sel]}</p><p class="meta">${l.s.join(", ")}.</p>`;
+}
+const D=(a,b)=>Math.hypot(P[a][0]-P[b][0],P[a][1]-P[b][1])/27;
+function plan(a,b){
+ const dist={},prev={},q=[],done=new Set();
+ const push=(k,d,p)=>{if(dist[k]===undefined||d<dist[k]){dist[k]=d;prev[k]=p;q.push([d,k])}};
+ keys.forEach(l=>{if(L[l].s.includes(a))push(a+"|"+l,0,null)});
+ while(q.length){q.sort((x,y)=>x[0]-y[0]);const [d,k]=q.shift();if(done.has(k))continue;done.add(k);
+  const [s,l]=k.split("|"),arr=L[l].s,i=arr.indexOf(s);
+  [i-1,i+1].forEach(j=>{if(arr[j])push(arr[j]+"|"+l,d+D(s,arr[j]),k)});
+  keys.forEach(m=>{if(m!==l&&L[m].s.includes(s))push(s+"|"+m,d+4,k)})}
+ let best=null;keys.forEach(l=>{const k=b+"|"+l;if(dist[k]!==undefined&&(!best||dist[k]<dist[best]))best=k});
+ if(!best)return null;
+ const path=[];for(let k=best;k;k=prev[k])path.unshift(k);
+ return{path,t:dist[best]};
+}
+function go(){
+ const a=$("#from").value,b=$("#to").value,out=$("#result"),r=$("#route");
+ document.querySelectorAll(".st").forEach(e=>e.classList.toggle("pick",e.dataset.s===a||e.dataset.s===b));
+ r.innerHTML="";
+ if(a===b){out.innerHTML=`<p class="meta">Pick two different stations.</p>`;return}
+ const p=plan(a,b);if(!p){out.innerHTML=`<p class="meta">No route found.</p>`;return}
+ const legs=[];p.path.forEach(k=>{const [s,l]=k.split("|"),g=legs[legs.length-1];
+  if(g&&g.l===l){g.to=s;g.n++}else legs.push({l,from:s,to:s,n:0})});
+ const pts=[];p.path.forEach(k=>{const c=P[k.split("|")[0]].slice(0,2).join(",");if(pts[pts.length-1]!==c)pts.push(c)});
+ r.innerHTML=`<polyline class="halo" points="${pts.join(" ")}"/><polyline class="flow" points="${pts.join(" ")}"/>`;
+ const tr=legs.length-1;
+ out.innerHTML=`<div class="total">About ${Math.round(p.t)} min <small>${tr?tr+(tr>1?" transfers":" transfer"):"no transfers"}</small></div>`+
+  legs.map(g=>`<div class="leg"><b style="background:${L[g.l].c}"></b><div><strong>${L[g.l].n}</strong><br><span class="meta">${g.from} to ${g.to}, ${g.n} ${g.n>1?"stops":"stop"}</span></div></div>`).join("");
+}
+function spot(s){
+ const el=$("#stn");
+ if(PU[s]){const u=UP[PU[s][3]];el.innerHTML=`<h2>${s}</h2><p><span class="chip" style="cursor:default;padding:2px 9px"><i style="border:2px dashed ${u.c}"></i>Planned</span></p><p>A future station on the ${u.n}.</p><p class="meta">${u.t}</p>`;return}
+ const ls=keys.filter(k=>L[k].s.includes(s));
+ const nb=ls.map(k=>{const a=L[k].s,i=a.indexOf(s),p=a[i-1],n=a[i+1];return`<span class="meta">${L[k].n}: ${[p,n].filter(Boolean).join(" · ")}</span>`}).join("<br>");
+ el.innerHTML=`<h2>${s}</h2><p>${ls.map(k=>`<span class="chip" style="cursor:default;padding:2px 9px"><i style="background:${L[k].c}"></i>Line ${k}</span>`).join(" ")}</p><p>${SF[s]||"A stop on "+L[ls[0]].n+"."}</p><p>${nb}</p>
+ <p class="meta" style="margin-top:12px">Live departures can’t load inside this page, because pages here can’t request data from other sites. Next-train screens on the platform show arrivals, or open ttc.ca.</p><a class="btn" href="https://www.ttc.ca/" target="_blank" rel="noopener">Check trains on ttc.ca</a>`;
+}
+function spot(s){
+ const el=$("#stn"),chip=(c,t)=>`<span class="chip" style="cursor:default;padding:2px 9px"><i style="${c}"></i>${t}</span>`;
+ const pho=`<a class="btn alt" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(s.replace(/ GO$/,"")+(PG[s]?" GO station":" subway station Toronto")+" exterior")}">Photos ↗</a>`;
+ if(PU[s]){const u=UP[PU[s][3]];el.innerHTML=`<h2>${s}</h2><p>${chip("border:2px dashed "+u.c,"Planned")}</p><p>A future station on the ${u.n}.</p><p class="meta">${u.t}</p>`;return}
+ if(PG[s]){const g=GOL[PG[s][3]],a=g.names,i=a.indexOf(s),nb=[a[i-1],a[i+1]].filter(Boolean).map(x=>x.replace(/ GO$/,"")).join(" · "),nm=s.replace(/ GO$/,"");
+  el.innerHTML=`<h2>${nm} GO</h2><p>${chip("background:"+g.c,"GO "+g.n)}</p><p>${nm} is a GO Transit stop on the ${g.n} line, placed from the GO system map. Neighbouring stops: ${nb}.</p><p>${GH(g)}</p>${TRM[s]?`<p><strong>TTC connection.</strong> Linked to ${TRM[s].join(", ")} for transfers in the trip planner.</p>`:""}<p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://www.gotransit.com/" target="_blank" rel="noopener">GO schedules</a>${pho}</p>`;return}
+ const ls=keys.filter(k=>L[k].s.includes(s)),hub=HUB[s];
+ const nb=ls.map(k=>{const a=L[k].s,i=a.indexOf(s);return`<span class="meta">${L[k].n}: ${[a[i-1],a[i+1]].filter(Boolean).join(" · ")}</span>`}).join("<br>");
+ const body=hub?hub.map(p=>`<p><strong>${p[0]}.</strong> ${p[1]}</p>`).join(""):`<p>${SF[s]||"A stop on "+L[ls[0]].n+"."}</p>`;
+ el.innerHTML=`<h2>${s}</h2><p>${ls.map(k=>chip("background:"+L[k].c,"Line "+k)).join(" ")}</p>${AT[s]?`<p class="meta">Location: ${AT[s]}.</p>`:""}${body}${hist(s,ls)}${RS[s]?`<p><strong>Ridership.</strong> ${RS[s]}</p>`:""}${TRM[s]?`<p><strong>GO connection.</strong> ${TRM[s].map(x=>x.replace(/ GO$/,"")+" GO").join(", ")} is linked for transfers in the trip planner.</p>`:""}<p>${nb}</p><p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://www.ttc.ca/" target="_blank" rel="noopener">Check trains on ttc.ca</a>${pho}</p><p class="meta">Live departures and photos can’t load inside this page, so these open in a new tab.</p>`;
+}
+function plan(a,b){
+ const dist={},prev={},q=[],done=new Set(),ids=Object.keys(ALL);
+ const D=(x,y)=>Math.hypot(XY(x)[0]-XY(y)[0],XY(x)[1]-XY(y)[1]);
+ const push=(k,d,p)=>{if(dist[k]===undefined||d<dist[k]){dist[k]=d;prev[k]=p;q.push([d,k])}};
+ ids.forEach(l=>{if(ALL[l].s.includes(a))push(a+"|"+l,0,null)});
+ while(q.length){q.sort((x,y)=>x[0]-y[0]);const [d,k]=q.shift();if(done.has(k))continue;done.add(k);
+  const i0=k.lastIndexOf("|"),s=k.slice(0,i0),l=k.slice(i0+1),arr=ALL[l].s,i=arr.indexOf(s);
+  [i-1,i+1].forEach(j=>{if(arr[j])push(arr[j]+"|"+l,d+D(s,arr[j])/(ALL[l].go?34:27),k)});
+  ids.forEach(m=>{if(m!==l&&ALL[m].s.includes(s))push(s+"|"+m,d+(ALL[m].go?6:4),k)});
+  (TRM[s]||[]).forEach(t=>ids.forEach(m=>{if(ALL[m].s.includes(t))push(t+"|"+m,d+7,k)}))}
+ let best=null;ids.forEach(l=>{const k=b+"|"+l;if(dist[k]!==undefined&&(!best||dist[k]<dist[best]))best=k});
+ if(!best)return null;
+ const path=[];for(let k=best;k;k=prev[k])path.unshift(k);
+ return{path,t:dist[best]};
+}
+function go(){
+ const a=$("#from").value,b=$("#to").value,out=$("#result"),r=$("#route");
+ document.querySelectorAll(".st,.gost").forEach(e=>e.classList.toggle("pick",[e.dataset.s,e.dataset.gs].some(v=>v&&(v===a||v===b))));
+ r.innerHTML="";
+ if(a===b){out.innerHTML=`<p class="meta">Pick two different stations.</p>`;return}
+ const p=plan(a,b);if(!p){out.innerHTML=`<p class="meta">No route found.</p>`;return}
+ const legs=[];p.path.forEach(k=>{const i0=k.lastIndexOf("|"),s=k.slice(0,i0),l=k.slice(i0+1),g=legs[legs.length-1];
+  if(g&&g.l===l){g.to=s;g.n++}else legs.push({l,from:s,to:s,n:0})});
+ const pts=[];p.path.forEach(k=>{const c=XY(k.slice(0,k.lastIndexOf("|"))).slice(0,2).join(",");if(pts[pts.length-1]!==c)pts.push(c)});
+ r.innerHTML=`<polyline class="halo" points="${pts.join(" ")}"/><polyline class="flow" points="${pts.join(" ")}"/>`;
+ const tr=legs.length-1,col=l=>l[0]==="G"?GOL[+l.slice(1)].c:L[l].c;
+ out.innerHTML=`<div class="total">About ${Math.round(p.t)} min <small>${tr?tr+(tr>1?" transfers":" transfer"):"no transfers"}</small></div>`+
+  legs.map((g,i)=>(i?`<div class="meta" style="margin:8px 0 0 16px">${ALL[legs[i-1].l].go!==ALL[g.l].go?"Walk between GO and TTC":"Transfer"} at ${g.from.replace(/ GO$/,"")}</div>`:"")+`<div class="leg"><b style="background:${col(g.l)}"></b><div><strong>${ALL[g.l].n}</strong><br><span class="meta">${g.from} to ${g.to}, ${g.n} ${g.n>1?"stops":"stop"}</span></div></div>`).join("");
+}
+function stationPick(s){$(nextFrom?"#from":"#to").value=s;nextFrom=!nextFrom;spot(s);go()}
+$("#chips").addEventListener("click",e=>{const c=e.target.closest(".chip");if(c)pickLine(c.dataset.l===sel?"":c.dataset.l)});
+const act=e=>{const g=e.target.closest(".st"),u=e.target.closest(".us"),o=e.target.closest(".gost");if(g)stationPick(g.dataset.s);else if(u)spot(u.dataset.u);else if(o)stationPick(o.dataset.gs)};
+$("#map").addEventListener("click",act);
+$("#map").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();act(e)}});
+["from","to"].forEach(id=>$("#"+id).addEventListener("change",e=>{spot(e.target.value);go()}));
+$("#swap").onclick=()=>{const f=$("#from").value;$("#from").value=$("#to").value;$("#to").value=f;go()};
+$("#more").onclick=()=>{fi=(fi+1)%FACTS.length;$("#fact").textContent=FACTS[fi]};
+$("#fact").textContent=FACTS[0];
+$("#sc").innerHTML=ST.map((r,i)=>`<button class="chip" data-i="${i}" aria-pressed="false"><i style="background:var(--accent)"></i>${r[0]}</button>`).join("");
+function sc(i){document.querySelectorAll("#sc .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.i==i));const r=ST[i];document.querySelectorAll(".sc,.scb").forEach(e=>e.classList.toggle("dim",e.dataset.r!==r[0]));$("#scinfo").innerHTML=`<p><strong>${r[0]} ${r[1]}</strong><br><span class="meta">${r[2]}</span></p><p>${r[3]}</p>`}
+$("#sc").addEventListener("click",e=>{const c=e.target.closest(".chip");if(c)sc(c.dataset.i)});
+sc(2);document.querySelectorAll(".sc,.scb").forEach(e=>e.classList.remove("dim"));{const opt=a=>a.map(n=>`<option>${n}</option>`).join("");["from","to"].forEach(id=>$("#"+id).innerHTML=`<optgroup label="TTC">${opt(Object.keys(P).sort())}</optgroup><optgroup label="GO Transit">${opt(Object.keys(PG).sort())}</optgroup>`);$("#from").value="Mount Dennis";$("#to").value="Oshawa GO"}
+info();go();spot("Union");
+</script>
+</body>
+</html>
