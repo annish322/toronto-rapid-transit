@@ -48,6 +48,15 @@ svg{display:block;max-width:none;height:auto;margin:0 auto}
 .upt{fill:var(--muted);font-style:italic}
 .ust{fill:var(--panel);stroke:var(--text);stroke-width:2.5;stroke-dasharray:3 3;cursor:pointer}
 .hint{font-size:.85rem;color:var(--muted);margin:8px 2px 0}
+.ph{margin:0 0 12px}
+.phl{display:grid;place-items:center;text-align:center;padding:10px;border-radius:10px;background:var(--bg);color:var(--muted);font-size:.9rem;border:1px dashed var(--border)}
+.phl.ld{aspect-ratio:16/9;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.55}}
+@media(prefers-reduced-motion:reduce){.phl.ld{animation:none}}
+.phf{margin:0}
+.phf img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:var(--bg)}
+.phf figcaption{font-size:.75rem;color:var(--muted);margin-top:5px}
+.phf a{color:inherit}
 .row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end}
 label{font-size:.8rem;color:var(--muted);display:block;margin-bottom:3px}
 select,.sw input{width:100%;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
@@ -90,6 +99,17 @@ p{margin:0 0 10px}
 .st:hover text,.st:focus-visible text,.us:hover .upt,.us:focus-visible .upt{font-size:calc(24px*var(--k,1));stroke-width:calc(6px*var(--k,1))}
 .gost:hover text,.gost:focus-visible text{font-size:calc(22px*var(--k,1));stroke-width:calc(5.5px*var(--k,1))}
 @media(prefers-reduced-motion:reduce){.st text,.gost text,.us .upt{transition:none}}
+.dh{font-size:1.02rem;font-weight:800;margin:16px 0 4px;padding-top:12px;border-top:1px solid var(--border)}
+.deep p{margin:0 0 10px}
+.live{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:0 0 12px;background:var(--bg)}
+.live h3{font-size:1rem;margin:0 0 8px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.live .dir{margin:8px 0 0}.live .dir b{display:block;font-size:.85rem;color:var(--muted);font-weight:600}
+.live .tm{display:inline-block;font-weight:800;font-size:1.05rem;margin:2px 10px 0 0}
+.live .tm small{font-weight:400;color:var(--muted);font-size:.8rem}
+.live .btn{padding:4px 10px;font-size:.85rem}
+.live details{margin-top:8px;font-size:.78rem;color:var(--muted)}.live pre{white-space:pre-wrap;word-break:break-all;margin:4px 0 0}
+.live .nx{font-size:1.6rem;font-weight:800;line-height:1.15;margin:0 0 4px}.live .nx small{display:block;font-size:.8rem;font-weight:400;color:var(--muted)}
+.nxb{pointer-events:none;transform-box:fill-box;transform-origin:50% 100%;transform:scale(var(--k,1))}.nxb rect{fill:var(--accent)}.nxb text{fill:#fff;font-size:15px;font-weight:800}
 </style>
 </head>
 <body>
@@ -375,14 +395,13 @@ function spot(s){
 }
 function spot(s){
  const el=$("#stn"),chip=(c,t)=>`<span class="chip" style="cursor:default;padding:2px 9px"><i style="${c}"></i>${t}</span>`;
- const pho=`<a class="btn alt" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(s.replace(/ GO$/,"")+(PG[s]?" GO station":" subway station Toronto")+" exterior")}">Photos ↗</a>`;
  if(PU[s]){const u=UP[PU[s][3]];el.innerHTML=`<h2>${s}</h2><p>${chip("border:2px dashed "+u.c,"Planned")}</p><p>A future station on the ${u.n}.</p><p class="meta">${u.t}</p>`;return}
  if(PG[s]){const g=GOL[PG[s][3]],a=g.names,i=a.indexOf(s),nb=[a[i-1],a[i+1]].filter(Boolean).map(x=>x.replace(/ GO$/,"")).join(" · "),nm=s.replace(/ GO$/,"");
-  const outside=OUTSIDE.has(s);el.innerHTML=`<h2>${nm} GO</h2><p>${chip("background:"+g.c,"GO "+g.n)}${outside?chip("border:2px dashed var(--text)","Outside Toronto · GTA"):""}</p><p>${nm} is a GO Transit stop on the ${g.n} line${outside?", located outside the City of Toronto in the Greater Toronto Area":""}. Neighbouring stops: ${nb}.</p><p>${GH(g)}</p>${TRM[s]?`<p><strong>TTC connection.</strong> Linked to ${TRM[s].join(", ")} for transfers in the trip planner.</p>`:""}<p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://www.gotransit.com/" target="_blank" rel="noopener">GO schedules</a>${pho}</p>`;return}
+  const outside=OUTSIDE.has(s);el.innerHTML=`<h2>${nm} GO</h2><p>${chip("background:"+g.c,"GO "+g.n)}${outside?chip("border:2px dashed var(--text)","Outside Toronto · GTA"):""}</p><div class="ph" id="stphoto"></div><p>${nm} is a GO Transit stop on the ${g.n} line${outside?", located outside the City of Toronto in the Greater Toronto Area":""}. Neighbouring stops: ${nb}.</p><p>${GH(g)}</p>${TRM[s]?`<p><strong>TTC connection.</strong> Linked to ${TRM[s].join(", ")} for transfers in the trip planner.</p>`:""}<p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://www.gotransit.com/" target="_blank" rel="noopener">GO schedules</a></p>`;photo(s);return}
  const ls=keys.filter(k=>L[k].s.includes(s)),hub=HUB[s];
  const nb=ls.map(k=>{const a=L[k].s,i=a.indexOf(s);return`<span class="meta">${L[k].n}: ${[a[i-1],a[i+1]].filter(Boolean).join(" · ")}</span>`}).join("<br>");
  const body=hub?hub.map(p=>`<p><strong>${p[0]}.</strong> ${p[1]}</p>`).join(""):`<p>${SF[s]||"A stop on "+L[ls[0]].n+"."}</p>`;
- el.innerHTML=`<h2>${s}</h2><p>${ls.map(k=>chip("background:"+L[k].c,"Line "+k)).join(" ")}</p>${AT[s]?`<p class="meta">Location: ${AT[s]}.</p>`:""}${body}${hist(s,ls)}${RS[s]?`<p><strong>Ridership.</strong> ${RS[s]}</p>`:""}${TRM[s]?`<p><strong>GO connection.</strong> ${TRM[s].map(x=>x.replace(/ GO$/,"")+" GO").join(", ")} is linked for transfers in the trip planner.</p>`:""}<p>${nb}</p><p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://www.ttc.ca/" target="_blank" rel="noopener">Check trains on ttc.ca</a>${pho}</p><p class="meta">Live departures and photos can’t load inside this page, so these open in a new tab.</p>`;
+ el.innerHTML=`<h2>${s}</h2><p>${ls.map(k=>chip("background:"+L[k].c,"Line "+k)).join(" ")}</p><div class="ph" id="stphoto"></div>${AT[s]?`<p class="meta">Location: ${AT[s]}.</p>`:""}${body}${hist(s,ls)}${RS[s]?`<p><strong>Ridership.</strong> ${RS[s]}</p>`:""}${TRM[s]?`<p><strong>GO connection.</strong> ${TRM[s].map(x=>x.replace(/ GO$/,"")+" GO").join(", ")} is linked for transfers in the trip planner.</p>`:""}<p>${nb}</p><p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="https://www.ttc.ca/" target="_blank" rel="noopener">Check trains on ttc.ca</a></p><p class="meta">Live departures can’t load inside this page, so this opens in a new tab.</p>`;photo(s);
 }
 function plan(a,b){
  const dist={},prev={},q=[],done=new Set(),ids=Object.keys(ALL);
@@ -423,6 +442,41 @@ const nrm=s=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[�
 const OPTS=[...Object.keys(P).sort().map(n=>({n,t:"TTC"})),...Object.keys(PG).sort().map(n=>({n,t:"GO Transit"}))];
 OPTS.forEach(o=>o.k=nrm(o.n));
 const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;");
+// in-page station photos from Wikipedia / Wikimedia Commons (no API key; images are openly licensed and credited)
+const PHC=new Map();let phTok=0;
+const wget=async p=>{const r=await fetch("https://en.wikipedia.org/w/api.php?"+new URLSearchParams({format:"json",formatversion:"2",origin:"*",...p}));if(!r.ok)throw new Error(r.status);return r.json()};
+async function findPhoto(s){
+ const go=/ GO$/.test(s),nm=s.replace(/ GO$/,"").replace(/’/g,"'"),key=nrm(nm);
+ const j=await wget({action:"query",generator:"search",gsrsearch:go?nm+" GO station":nm+" station Toronto subway",gsrlimit:"8",gsrnamespace:"0",prop:"pageimages",piprop:"thumbnail|name",pithumbsize:"900",pilimit:"8"});
+ const pages=((j.query||{}).pages||[]).slice().sort((a,b)=>a.index-b.index);
+ const re=new RegExp("^"+key.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+" (go )?station\\b");
+ const pick=pages.find(p=>p.thumbnail&&p.pageimage&&re.test(nrm(p.title)));
+ if(!pick)return null;
+ const d={src:pick.thumbnail.source,title:pick.title,file:pick.pageimage,artist:"",lic:""};
+ try{
+  const m=await wget({action:"query",titles:"File:"+pick.pageimage,prop:"imageinfo",iiprop:"extmetadata",iiextmetadatafilter:"Artist|LicenseShortName"});
+  const x=(((m.query||{}).pages||[])[0]||{}).imageinfo,e=x&&x[0]&&x[0].extmetadata||{};
+  if(e.Artist)d.artist=new DOMParser().parseFromString(e.Artist.value,"text/html").body.textContent.trim().slice(0,80);
+  if(e.LicenseShortName)d.lic=String(e.LicenseShortName.value).slice(0,40);
+ }catch(_){}
+ return d;
+}
+async function photo(s){
+ const box=$("#stphoto");if(!box)return;const tok=++phTok,msg=(t,c)=>{box.innerHTML=`<div class="phl ${c||""}">${t}</div>`};
+ msg("Loading photo…","ld");
+ let d=PHC.get(s);
+ if(d===undefined){try{d=await findPhoto(s);PHC.set(s,d)}catch(_){if(tok===phTok&&$("#stphoto")===box)msg("Couldn’t load a photo right now.");return}}
+ if(tok!==phTok||$("#stphoto")!==box)return;
+ if(!d){msg("No photo available for this station.");return}
+ const fig=document.createElement("figure");fig.className="phf";
+ const im=new Image();im.alt="Photo of "+s.replace(/ GO$/,"")+(PG[s]?" GO station":" station");im.referrerPolicy="no-referrer";
+ im.onerror=()=>{if($("#stphoto")===box)msg("No photo available for this station.")};im.src=d.src;
+ const cap=document.createElement("figcaption"),a=document.createElement("a");
+ cap.append(d.title+" · Photo: "+(d.artist||"Wikimedia Commons contributor")+" · ");
+ a.href="https://commons.wikimedia.org/wiki/File:"+encodeURIComponent(d.file);a.target="_blank";a.rel="noopener";a.textContent=d.lic||"Wikimedia Commons";
+ cap.append(a);fig.append(im,cap);box.replaceChildren(fig);
+}
+
 const hl=(n,q)=>{const i=q?n.toLowerCase().indexOf(q.trim().toLowerCase()):-1,m=q.trim().length;return i<0||!m?esc(n):esc(n.slice(0,i))+"<mark>"+esc(n.slice(i,i+m))+"</mark>"+esc(n.slice(i+m))};
 const findOpts=q=>{q=nrm(q);if(!q)return OPTS;return OPTS.map(o=>({o,s:o.k.startsWith(q)?0:o.k.split(" ").some(w=>w.startsWith(q))?1:o.k.includes(q)?2:9})).filter(x=>x.s<9).sort((a,b)=>a.s-b.s).map(x=>x.o)};
 ["from","to"].forEach(id=>{
@@ -451,6 +505,103 @@ $("#sc").innerHTML=ST.map((r,i)=>`<button class="chip" data-i="${i}" aria-presse
 function sc(i){document.querySelectorAll("#sc .chip").forEach(c=>c.setAttribute("aria-pressed",c.dataset.i==i));const r=ST[i];document.querySelectorAll(".sc,.scb").forEach(e=>e.classList.toggle("dim",e.dataset.r!==r[0]));$("#scinfo").innerHTML=`<p><strong>${r[0]} ${r[1]}</strong><br><span class="meta">${r[2]}</span></p><p>${r[3]}</p>`}
 $("#sc").addEventListener("click",e=>{const c=e.target.closest(".chip");if(c)sc(c.dataset.i)});
 sc(2);document.querySelectorAll(".sc,.scb").forEach(e=>e.classList.remove("dim"));$("#from").value="Mount Dennis";$("#to").value="Oshawa GO";
+
+// ===== Deep station detail =====
+const ERA={
+"1|1954":"Canada’s first subway took years of disruption to build. Crews began digging up Yonge Street in September 1949, using cut-and-cover construction that trenched the roadway open and then roofed it over again. The 7.4 km line from Union to Eglinton, with 12 stations, opened on March 30, 1954 and took over from the Yonge Street streetcar. Crowds queued for hours on opening day, and the line cut travel along Yonge dramatically. It was the seed of everything that followed, and every later line was planned around it.",
+"1|1963":"The University subway opened on February 28, 1963, running from Union north under University Avenue and then to St George. It joined the Yonge line at Union to form the famous U shape, so trains could run a continuous loop through downtown. It also set up the later connection with the Bloor–Danforth line at St George, which arrived in 1966.",
+"1|1973":"Opened in 1973 as part of the Yonge line’s push north of Eglinton into the suburban districts of North York. By the early 1970s the subway was an established part of how the city grew, and these stops were planned to pull new apartment and office development toward Yonge Street.",
+"1|1974":"Opened in 1974 as the Yonge line reached Finch, then the northern limit of Toronto’s subway. The extension drew high-rise development along Yonge Street through North York, and a terminal at Finch gave suburban bus routes a place to feed riders into the subway.",
+"1|1987":"This was an infill stop, added to an existing line rather than built with it. North York Centre opened on June 18, 1987 to serve the civic centre and tower district that North York was building around Yonge and Mel Lastman Square, when that area was being promoted as a second downtown.",
+"1|1978":"The Spadina line opened on January 28, 1978. It was built in the median of Allen Road, the expressway that was cut short after the Spadina Expressway project was cancelled in 1971. Because the route follows a highway corridor rather than a main street, several stations here sit in open trenches or beside the roadway instead of under shopping streets.",
+"1|1996":"This stop opened in 1996 when the Spadina line was extended a short way north of Wilson. It was called Downsview until it was renamed Sheppard West in 2017, as part of the opening of the Vaughan extension.",
+"1|2017":"The Toronto–York Spadina Subway Extension opened on December 17, 2017. It added about 8.6 km and six stations, cost well over three billion dollars, and ran past its first planned opening date. It was the first TTC subway extension to cross Toronto’s boundary, reaching the City of Vaughan.",
+"2|1966":"The Bloor–Danforth line opened in February 1966 between Keele and Woodbine. It was the city’s second subway line, and it ran east–west beneath Bloor Street and Danforth Avenue to cross Yonge at Bloor-Yonge. The opening let people travel across the city without going downtown, and it unlocked development along both streets.",
+"2|1968":"Opened in 1968, when the Bloor–Danforth line was extended west to Islington and east to Warden. These extensions pushed the line out toward the edges of Etobicoke and Scarborough, giving those growing suburbs a direct subway link.",
+"2|1980":"Opened in 1980 as the final extensions of the Bloor–Danforth line, west to Kipling and east to Kennedy. These stops were built around large bus terminals so that suburban routes in Etobicoke, Mississauga and Scarborough could connect to the subway.",
+"4|2002":"The Sheppard subway opened in 2002 as a short, costly line of roughly a billion dollars. It was meant as the first piece of a longer route that was never built, and it remains the TTC’s shortest subway line. Its stations were designed to be fully accessible from the start.",
+"5|2026":"The Eglinton Crosstown opened on February 8, 2026, after years of construction and repeated delays. The line was first announced in 2007 as part of the Transit City plan, then reworked and rebuilt around a mostly underground route. Tunnelling and station work along Eglinton Avenue disrupted businesses and residents for over a decade.",
+"6|2025":"The Finch West LRT opened on December 7, 2025. Like the Crosstown, it came out of the Transit City light rail plan, and it was long delayed. It gives the northwest a rapid line that links Line 1 to Humber College."};
+const LOOK={
+"1|1954":"Stations from this era are cut-and-cover boxes just below the street. They tend to be compact, with tiled walls and the station name in large tile lettering, and most use a single island platform between the tracks. Colours and tile patterns change from stop to stop, which helps riders recognise where they are.",
+"1|1963":"The University line stations are a step up in scale from the 1954 stops, with longer platforms and wider concourses, many under the broad avenue. Tiled walls in distinct colours still announce each stop, and the stations sit close to major institutions along the route.",
+"1|1973":"Built in the early 1970s, this stop has a more open feel than the earliest Yonge stations. Expect broad concourses, big bus terminals nearby and a design that handles suburban crowds.",
+"1|1974":"A 1970s suburban station: roomy concourses, long platforms and a large integrated bus terminal. The design puts bus connections right at the station entrance.",
+"1|1987":"As an infill station it is more compact than its neighbours, and the architecture belongs to the late 1980s, with a modern, glassy look to match the civic towers around it.",
+"1|1978":"A 1970s station built into the Allen Road corridor. Look for angular modern architecture, glass and concrete, bus loops at the entrances, and the sound and sight of the expressway running alongside.",
+"1|1996":"A late 1990s station with a simple, functional design, an open platform and bus connections at the entrance.",
+"1|2017":"A 2010s showpiece. The extension’s stations are large, with high ceilings, daylight from skylights and glass walls, and public art commissioned for each stop. Platforms are deep and long, reached by escalators and elevators from bright, open mezzanines.",
+"2|1966":"A 1960s Bloor–Danforth station. Most share a common design language: tiled walls in one colour scheme per stop, the station name in large lettering, and straightforward platforms with a concourse above. Many have since been renovated, so the look varies from stop to stop.",
+"2|1968":"A late 1960s station of the same family as the original Bloor–Danforth stops, with tiled walls and large name lettering, though these suburban stops are often roomier and sit near bus loops.",
+"2|1980":"A 1980s terminal designed around buses. Expect a large concourse, bus bays integrated into the station, and a roomy platform to handle the crowds of an end-of-line stop.",
+"4|2002":"A modern station with elevators, wide concourses and clean lines. Platforms are shorter than on the older lines because Line 4 runs four-car trains.",
+"5|2026":"A modern light rail stop. Vehicles are low floor, so boarding is step-free. Underground stops have glass, bright lighting and long escalator rides from street level, and stops along the surface sections are simpler platforms.",
+"6|2025":"A modern light rail stop with step-free boarding. Most of the line runs in the middle of Finch Avenue West, so platforms sit in the median and you cross the street to reach them."};
+const SIDE=(k,s)=>{const a=L[k].s,i=a.indexOf(s);if(k!=="1")return"";const ui=a.indexOf("St George"),un=a.indexOf("Union");return s==="Union"?"It sits at the bottom of Line 1’s U shape.":i<ui?"It sits on Line 1’s Spadina branch, the western arm of the U.":i<un?"It sits on Line 1’s University section, the western arm of the U in downtown.":"It sits on Line 1’s Yonge section, the eastern arm of the U."};
+const DEEP={
+"Union":["The station above Union’s subway platforms is one of Toronto’s great civic buildings. It was designed by Ross & Macdonald with Hugh Jones and John M. Lyle, built over the years around the First World War, and officially opened on August 6, 1927 by the Prince of Wales. The subway station was added in 1954 with the first Yonge line, and the University line arrived in 1963, which is why the platforms sit at the bottom of the U. Since the 2010s the whole site has been rebuilt around the crowds, with the rail concourse, the PATH links and the subway all expanded.","The Great Hall is the showpiece: a cavernous, stone-walled room with a coffered ceiling about 27 metres up, with the names of cities served by the railways lettered around the cornice. Outside, the long street façade is a row of tall Doric columns. Down below, the subway platforms are far more utilitarian, with trains arriving from both the Yonge and University sides.","Union is the point of entry for the Financial District, Scotiabank Arena, the Rogers Centre and the CN Tower, all reachable on indoor PATH walkways. It is also the starting point for most GO lines and the UP Express to Pearson, and VIA trains leave here for Ottawa, Montreal and beyond."],
+"King":["Opened in 1954 on the original Yonge line, King sits at Yonge and King in the heart of the Financial District. The area was built up as Bay Street’s bank towers pushed east and north, and the station has served office commuters for seven decades. The 504 King streetcar, one of the busiest surface routes, has long met the subway here, and the 2017 King Street Pilot gave streetcars priority along the downtown stretch.","Like other first-generation Yonge stops, it is a cut-and-cover station close to the street, compact, with tiled walls and its name in large tile lettering on the platform. Crowds are heaviest on weekday mornings and evenings.","Around the station you’ll find the towers of the Financial District, the TD Centre and First Canadian Place, Canada’s tallest office tower, a short walk west. The PATH network links many of these buildings underground."],
+"Queen":["Queen opened in 1954 with the Yonge line, serving the corner of Yonge and Queen streets just east of Old City Hall. The original builders gave it a lower level that was left unfinished, planned for a possible Queen Street subway line that was never built. The shopping district it serves grew massively when the Eaton Centre opened in 1977.","Above ground, the station is entered close to Queen Street’s shopfronts. Below, the working platforms are compact first-generation Yonge line design, and the unused lower level has become one of the system’s best-known ghost spaces.","The Eaton Centre, the Elgin and Winter Garden Theatre and Toronto Metropolitan University are close, as is Nathan Phillips Square with its curved towers of City Hall and the Toronto sign. The 501 Queen streetcar runs overhead."],
+"Dundas":["Dundas opened in 1954 and serves the area around Yonge and Dundas, where the Eaton Centre opened in 1977 and made this one of the busiest retail corners in Canada. The square beside the station, once called Yonge–Dundas Square and now Sankofa Square, was created in the early 2000s from a block that had been derelict.","The station has the compact, cut-and-cover form of the earliest Yonge stops, with tiled walls and large name lettering. Above, the neighbourhood is the loudest in the city, with bright signs, big screens and crowds at all hours.","The Eaton Centre connects directly to the station concourse. Toronto Metropolitan University’s campus is just east, and the 505 Dundas streetcar crosses overhead."],
+"College":["College opened in 1954 at Yonge and College streets. It served Maple Leaf Gardens, the arena that opened in 1931 and was home to the Toronto Maple Leafs until 1999. The building has since been reborn as an athletic centre and a supermarket, and the station is still the stop for the area.","A cut-and-cover station from the first Yonge line, College is compact, with tiled walls and a centre platform. The entrance sits among the shops of Yonge Street.","The Gardens building, now home to Toronto Metropolitan University athletics, is a block east on Carlton. Toronto’s Church-Wellesley village and the college campuses at Ryerson (now Toronto Metropolitan) and the University of Toronto lie within a short walk."],
+"Museum":["Museum opened in 1963 on the University line. The station was closed in 2006 and reopened in December 2008 after a renovation that gave it a deliberate theme, tied to the Royal Ontario Museum across the street, which itself added the angular Michael Lee-Chin Crystal in 2007.","The renovated platforms are decorated to look like a gallery: the columns carry motifs inspired by the cultures in the museum’s collections, making the station one of the most distinctive on the system.","The Royal Ontario Museum, the Gardiner Museum of ceramics, the Bata Shoe Museum and the University of Toronto campus are all within a short walk."],
+"Queen’s Park":["Queen’s Park opened in 1963 with the University line, named for the park and the Ontario Legislative Building that sits on it. The legislature, in the Richardsonian Romanesque style, was completed in the 1890s and is the seat of the province’s government.","The station has a long platform under University Avenue, with tiled walls typical of the University line. Entrances face the park and the hospital district along College Street.","Above are the pink sandstone legislature, the University of Toronto, and the hospitals of University Avenue’s ‘Hospital Row’."],
+"Eglinton":["Eglinton was the northern terminus of the Yonge line from 1954, when the line opened, until 1973, when it was extended north to Lawrence and York Mills. Around the station grew Yonge–Eglinton, a midtown centre of high-rises and shops. The station now also serves Line 5 Eglinton, the Crosstown LRT that opened in February 2026.","The Line 1 platform is a first-generation Yonge line station, and the Line 5 station added beneath Eglinton and Yonge is new and much deeper, with the modern look and step-free boarding of the Crosstown.","The Yonge–Eglinton Centre, completed in the 1970s with offices, shops and a cinema, sits right at the station. The area is known for its busy, apartment-heavy streets and nightlife."],
+"Davisville":["Davisville opened in 1954 as part of the first Yonge line. Next to it is the Davisville Yard, the TTC’s original subway storage and maintenance site, which has stored the Yonge subway trains since the line opened.","A cut-and-cover first-generation station. You can sometimes see the yard tracks beside the line as trains head in or out of service.","The neighbourhood is residential, with leafy streets, apartments and the shops of Yonge Street."],
+"Wilson":["Wilson opened on January 28, 1978 as the terminus of the Spadina line, and it stayed the end of the line until the 1996 extension north. The Wilson Yard beside the station is the TTC’s largest subway yard, and trains regularly start or end service here.","A 1970s station set into the Allen Road corridor, with angular modern architecture and long bus loops serving the neighbourhoods and the Downsview area.","The area is a mix of low-rise neighbourhoods and the Wilson Heights apartments, with Downsview Park and the York University Heights area beyond."],
+"Yorkdale":["Yorkdale opened in 1978 with the Spadina line, but the mall it serves had been there since 1964. Yorkdale Shopping Centre was one of the first big enclosed malls in Canada, and the subway finally gave it a rapid transit link.","The station sits at the edge of the Allen Road corridor, with a long walkway connecting it to the mall, and a big bus terminal beside it. The 1970s architecture is angular and open.","Yorkdale Shopping Centre is one of Canada’s highest-grossing malls, and thousands of workers and shoppers use the station daily."],
+"Mount Dennis":["Mount Dennis was long the home of the Kodak Canada plant, whose factory buildings, known as Kodak Heights, shaped the neighbourhood for most of the 20th century. The station is part of a larger transit hub on the site, with the Line 5 stop, the Kitchener GO line and the UP Express, plus the maintenance facility for the Crosstown trains.","The Line 5 station combines old and new, with preserved industrial brick buildings from the Kodak site beside the modern light rail platforms. As the west end of Line 5, it serves a busy bus terminal.","The neighbourhood is working-class and is being transformed by the new transit. It is part of the Weston Road corridor."],
+"Don Mills":["Don Mills is the east end of Line 4, opened in 2002. The name goes back to Don Mills, planned in the 1950s as one of Canada’s first modern planned suburbs, developed by E. P. Taylor’s company on farmland. The station reaches this district’s heart, where the Fairview Mall opened in 1970.","The station is modern and fully accessible, with a bus terminal at the entrance. The platform is shorter than on the older lines because the trains are four cars long.","Fairview Mall is right next door, and a mix of towers and low-rise neighbourhoods surround it."]
+};
+function deepHTML(s){
+ const ls=keys.filter(k=>L[k].s.includes(s));if(!ls.length)return"";
+ const d=DEEP[s],sec=(h,x)=>x?`<h3 class="dh">${h}</h3><p>${x}</p>`:"";
+ let hi="",lo="",pos="";
+ ls.forEach(k=>{const o=OP[k+"|"+s],yr=o?o[0]:(k==="5"?2026:k==="6"?2025:0),key=k+"|"+yr,a=L[k].s,i=a.indexOf(s),end=i===0||i===a.length-1;
+  const pre=ls.length>1?`<strong>Line ${k}.</strong> `:"";
+  hi+=`<p>${pre}${ERA[key]||L[k].t}</p>`;
+  lo+=`<p>${pre}${LOOK[key]||"A station on "+L[k].n+"."}</p>`;
+  pos+=`<p>${pre}${end?"It is a terminus of "+L[k].n+", so trains end or start here and many riders change to buses.":"It is a stop on "+L[k].n+" between "+a[i-1]+" and "+a[i+1]+"."} ${SIDE(k,s)}</p>`});
+ const oth=ls.length>1?`This is an interchange between ${ls.map(k=>L[k].n).join(" and ")}.`:"";
+ const sc=ST.filter(r=>r[2].includes(s+" Station")).map(r=>r[0]+" "+r[1]);
+ const conn=[oth,sc.length?"Streetcar routes serving it: "+sc.join(", ")+".":"",TRM[s]?"It is linked to "+TRM[s].join(", ")+" for GO transfers.":""].filter(Boolean).join(" ");
+ return `<div class="deep"><h3 class="dh">History in depth</h3>${d?`<p>${d[0]}</p>`:""}${hi}`+(d?sec("What it looks like",d[1]):"")+`<h3 class="dh">${d?"Architecture and era":"What it looks like"}</h3>${lo}`+(d?sec("Around the station",d[2]):"")+`<h3 class="dh">Place on the network</h3>${pos}${conn?`<p>${conn}</p>`:""}</div>`;
+}
+const _spot=spot;
+spot=function(s){_spot(s);if(PG[s])return;const el=$("#stn");
+ let h;if(PU[s]){const u=UP[PU[s][3]],a=rows(u.s).map(r=>r[0]),i=a.indexOf(s);h=`<div class="deep"><h3 class="dh">About this planned station</h3><p>${s} is one of the planned stations on the ${u.n}. ${i>0?"The previous stop in this drawing is "+a[i-1]+". ":""}${i<a.length-1?"The next is "+a[i+1]+". ":""}</p><p>${u.t}</p><p>Planned projects change in scope, route and timing as designs are finished and contracts are awarded, so check Metrolinx and the TTC for the latest.</p></div>`}
+ else h=deepHTML(s);
+ if(!h)return;const fl=[...el.querySelectorAll("p")].find(p=>p.style.display==="flex");fl?fl.insertAdjacentHTML("beforebegin",h):el.insertAdjacentHTML("beforeend",h)};
+
+// ===== Start a bit zoomed in =====
+function home(){const m=$("#mw");z=Math.min(7000,fitW()*1.5);$("#map").style.width=z+"px";ks();atFit=false;const u=z/3900;m.scrollLeft=Math.max(0,(900+760)*u-m.clientWidth/2);m.scrollTop=Math.max(0,(880+270)*u-m.clientHeight/2)}
+home();
+// ===== Live Line 1 departures (TTC NTAS feed; codes from TransSee's Line 1 stop list) =====
+// [toward Vaughan MC code, toward Finch code]
+const LIVE={"Finch":[14111,14944],"North York Centre":[13789,13790],"Sheppard-Yonge":[13860,13859],"York Mills":[13792,13791],"Lawrence":[13793,13794],"Eglinton":[13795,13796],"Davisville":[13798,13797],"St Clair":[13799,13800],"Summerhill":[13802,13801],"Rosedale":[13803,13804],"Bloor-Yonge":[13864,13863],"Wellesley":[13806,13805],"College":[13807,13808],"Dundas":[13810,13809],"Queen":[13811,13812],"King":[13814,13813],"Union":[13815,13816],"St Andrew":[13817,13818],"Osgoode":[13820,13819],"St Patrick":[13821,13822],"Queen’s Park":[13824,13823],"Museum":[13825,13826],"St George":[13858,13857],"Spadina":[13853,13854],"Dupont":[13828,13827],"St Clair West":[13829,13830],"Cedarvale":[13832,13831],"Glencairn":[13833,13834],"Lawrence West":[13836,13835],"Yorkdale":[13837,13838],"Wilson":[13840,13839],"Sheppard West":[14945,14110],"Downsview Park":[15664,15665],"Finch West":[15659,15658],"York University":[15666,15667],"Pioneer Village":[15656,15657],"Highway 407":[15661,15660],"Vaughan MC":[15662,15663]};
+const NTAS="https://ntas.ttc.ca/api/ntas/get-next-train-time/";
+const ntasTimes=j=>{const out=[],walk=v=>{if(v==null)return;if(Array.isArray(v))return v.forEach(walk);if(typeof v==="object"){for(const[k,x]of Object.entries(v)){if(/next.?train|arriv|minute|timint|time/i.test(k)&&(typeof x==="string"||typeof x==="number"))String(x).split(/[,;]/).map(s=>s.trim()).filter(Boolean).forEach(s=>out.push(s));else walk(x)}}};walk(j);return out};
+const tmHTML=s=>{const n=Number(s);return Number.isFinite(n)?`<span class="tm">${n<1?"Due":Math.round(n)+"<small> min</small>"}</span>`:`<span class="tm"><small>${esc(s)}</small></span>`};
+let liveTok=0,liveTimer=null;
+function nxBadge(s,txt){const o=document.getElementById("nxb");if(o)o.remove();if(!txt||!P[s])return;const[x,y]=P[s],w=txt.length*8.5+16,g=document.createElementNS("http://www.w3.org/2000/svg","g");g.id="nxb";g.setAttribute("class","nxb");g.innerHTML=`<rect x="${x-w/2}" y="${y-48}" width="${w}" height="26" rx="6"/><path d="M${x-6} ${y-22} L${x} ${y-14} L${x+6} ${y-22}Z" fill="var(--accent)"/><text x="${x}" y="${y-30}" text-anchor="middle">${txt}</text>`;$("#map").appendChild(g)}
+const soonest=res=>{let b=null;res.forEach(r=>{if(r.err)return;const n=r.t.map(Number).find(Number.isFinite);if(n!==undefined&&(!b||n<b.n))b={n,d:r.n.replace("Toward ","")}});return b};
+async function liveLoad(s,box){
+ const tok=++liveTok,[a,b]=LIVE[s],body=box.querySelector(".lb"),dirs=[["Toward Vaughan MC",a],["Toward Finch",b]];
+ const upd=box.querySelector(".lu"),nx=box.querySelector(".nx");upd.textContent="Updating…";
+ const res=await Promise.all(dirs.map(async([n,c])=>{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
+  try{const r=await fetch(NTAS+c,{cache:"no-store",signal:ac.signal});if(!r.ok)throw new Error("HTTP "+r.status);const txt=await r.text();let j;try{j=JSON.parse(txt)}catch(_){j=txt}return{n,c,t:ntasTimes(j),raw:typeof j==="string"?j:JSON.stringify(j)}}
+  catch(e){return{n,c,err:e.message||"failed"}}finally{clearTimeout(to)}}));
+ if(tok!==liveTok||!box.isConnected)return;
+ if(res.every(r=>r.err)){nxBadge(s,null);nx.textContent="Live times unavailable";upd.textContent="";body.innerHTML=`<p class="meta">Couldn’t reach the TTC live feed from this page (${esc(res[0].err)}). Browsers block this when the feed doesn’t allow other sites to read it, and previews inside Claude also block outside requests. Open the file in your browser, or use the links below.</p><p style="display:flex;gap:8px;flex-wrap:wrap">${dirs.map(([n,c])=>`<a class="btn alt" target="_blank" rel="noopener" href="https://www.transsee.ca/predict?s=ttcsubwaynew.1.${c}">${n} on TransSee</a>`).join("")}</p>`;return}
+ {const b=soonest(res);nxBadge(s,b?(b.n<1?"Due":Math.round(b.n)+" min")+" · "+b.d:null);nx.innerHTML=b?`Next train: ${b.n<1?"Due":Math.round(b.n)+" min"}<small>toward ${b.d}</small>`:"No trains listed right now"}
+ body.innerHTML=res.map(r=>`<div class="dir"><b>${r.n}</b>${r.err?`<span class="meta">Unavailable (${esc(r.err)})</span>`:r.t.length?r.t.slice(0,4).map(tmHTML).join(""):`<span class="meta">No trains listed right now</span>`}</div>`).join("")+`<details><summary>Raw feed</summary>${res.map(r=>`<pre>${r.c}: ${esc((r.raw||r.err||"").slice(0,500))}</pre>`).join("")}</details>`;
+ upd.textContent="Updated "+new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit"});
+}
+const _spot2=spot;
+spot=function(s){_spot2(s);clearInterval(liveTimer);nxBadge(s,null);if(!LIVE[s])return;const ph=$("#stphoto");if(!ph)return;
+ const box=document.createElement("div");box.className="live";
+ box.innerHTML=`<h3><span>Live departures · Line 1</span><button class="btn alt" type="button">Refresh</button></h3>${s==="Dundas"?`<p class="meta" style="margin:0 0 6px">The TTC now calls this stop TMU station.</p>`:""}<div class="nx">Loading…</div><div class="lb meta"></div><div class="meta lu" style="margin-top:6px"></div>`;
+ ph.insertAdjacentElement("afterend",box);const run=()=>liveLoad(s,box);box.querySelector("button").onclick=run;run();liveTimer=setInterval(()=>{if(box.isConnected&&!document.hidden)run()},30000)};
 info();go();spot("Union");
 </script>
 </body>
