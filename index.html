@@ -585,22 +585,38 @@ const tmHTML=s=>{const n=Number(s);return Number.isFinite(n)?`<span class="tm">$
 let liveTok=0,liveTimer=null;
 function nxBadge(s,txt){const o=document.getElementById("nxb");if(o)o.remove();if(!txt||!P[s])return;const[x,y]=P[s],w=txt.length*8.5+16,g=document.createElementNS("http://www.w3.org/2000/svg","g");g.id="nxb";g.setAttribute("class","nxb");g.innerHTML=`<rect x="${x-w/2}" y="${y-48}" width="${w}" height="26" rx="6"/><path d="M${x-6} ${y-22} L${x} ${y-14} L${x+6} ${y-22}Z" fill="var(--accent)"/><text x="${x}" y="${y-30}" text-anchor="middle">${txt}</text>`;$("#map").appendChild(g)}
 const soonest=res=>{let b=null;res.forEach(r=>{if(r.err)return;const n=r.t.map(Number).find(Number.isFinite);if(n!==undefined&&(!b||n<b.n))b={n,d:r.n.replace("Toward ","")}});return b};
+// [eastbound code, westbound code] per station, from TransSee's stop lists
+const LX={
+2:{"Kipling":[13785,14948],"Islington":[13784,13783],"Royal York":[13781,13782],"Old Mill":[13780,13779],"Jane":[13777,13778],"Runnymede":[13776,13775],"High Park":[13773,13774],"Keele":[13772,13771],"Dundas West":[13769,13770],"Lansdowne":[13768,13767],"Dufferin":[13765,13766],"Ossington":[13764,13763],"Christie":[13761,13762],"Bathurst":[13760,13759],"Spadina":[13852,13851],"St George":[13856,13855],"Bay":[13757,13758],"Bloor-Yonge":[13756,13755],"Sherbourne":[13753,13754],"Castle Frank":[13752,13751],"Broadview":[13749,13750],"Chester":[13748,13747],"Pape":[13746,13745],"Donlands":[13743,13744],"Greenwood":[13742,13741],"Coxwell":[13739,13740],"Woodbine":[13738,13737],"Main Street":[13735,13736],"Victoria Park":[13734,13733],"Warden":[13732,13731],"Kennedy":[14947,13865]},
+4:{"Sheppard-Yonge":[13862,13861],"Bayview":[13844,13843],"Bessarion":[13845,13846],"Leslie":[13848,13847],"Don Mills":[14949,14109]},
+5:{"Mount Dennis":[16067,16068],"Keelesdale":[16202,16203],"Caledonia":[16083,16084],"Fairbank":[16204,16205],"Oakwood":[16206,16207],"Cedarvale":[16069,16070],"Forest Hill":[16208,16209],"Chaplin":[16210,16211],"Avenue":[16071,16072],"Eglinton":[16073,16074],"Mount Pleasant":[16212,16213],"Leaside":[16214,16215],"Laird":[16075,16076],"Sunnybrook Park":[16216,16217],"Don Valley":[16077,16078],"Aga Khan Park":[16218,16219],"Wynford":[16220,16221],"Sloane":[16079,16080],"O’Connor":[16222,16223],"Pharmacy":[16224,16225],"Hakimi Lebovic":[16226,16227],"Golden Mile":[16085,16086],"Birchmount":[16228,16229],"Ionview":[16230,16231],"Kennedy":[16081,16082]},
+6:{"Humber College":[16289,16290],"Westmore":[16291,16292],"Albion":[16295,16296],"Rowntree Mills":[16301,16302],"Signet Arrow":[16311,16312],"Jane and Finch":[16315,16316],"Finch West":[16323,16324]}};
+// Line 1 uses north/south; every other line runs east–west. Line 1 codes are [toward Vaughan MC, toward Finch].
+const L1D=s=>{const a=L["1"].s,i=a.indexOf(s),un=a.indexOf("Union");return s==="Union"?["Northbound (University line)","Northbound (Yonge line)"]:i<un?["Northbound","Southbound"]:["Southbound","Northbound"]};
+const EW=["Eastbound","Westbound"];
+function liveSets(s){const o=[];if(LIVE[s]){const d=L1D(s);o.push({k:"1",dirs:d.map((n,i)=>[n,LIVE[s][i]])})}["2","4","5","6"].forEach(k=>{if(LX[k][s])o.push({k,dirs:EW.map((n,i)=>[n,LX[k][s][i]])})});return o}
+const fmtT=n=>n<1?"Due":Math.round(n)+" min";
+async function ntasGet(c){const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
+ try{const r=await fetch(NTAS+c,{cache:"no-store",signal:ac.signal});if(!r.ok)throw new Error("HTTP "+r.status);const txt=await r.text();let j;try{j=JSON.parse(txt)}catch(_){j=txt}return{t:ntasTimes(j),raw:typeof j==="string"?j:JSON.stringify(j)}}
+ catch(e){return{err:e.name==="AbortError"?"timed out":(e.message||"failed")}}finally{clearTimeout(to)}}
 async function liveLoad(s,box){
- const tok=++liveTok,[a,b]=LIVE[s],body=box.querySelector(".lb"),dirs=[["Toward Vaughan MC",a],["Toward Finch",b]];
- const upd=box.querySelector(".lu"),nx=box.querySelector(".nx");upd.textContent="Updating…";
- const res=await Promise.all(dirs.map(async([n,c])=>{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),8000);
-  try{const r=await fetch(NTAS+c,{cache:"no-store",signal:ac.signal});if(!r.ok)throw new Error("HTTP "+r.status);const txt=await r.text();let j;try{j=JSON.parse(txt)}catch(_){j=txt}return{n,c,t:ntasTimes(j),raw:typeof j==="string"?j:JSON.stringify(j)}}
-  catch(e){return{n,c,err:e.message||"failed"}}finally{clearTimeout(to)}}));
+ const tok=++liveTok,sets=liveSets(s),nx=box.querySelector(".nx"),upd=box.querySelector(".lu"),body=box.querySelector(".lb");upd.textContent="Updating…";
+ const all=await Promise.all(sets.map(async st=>({...st,res:await Promise.all(st.dirs.map(async([n,c])=>({n,c,...await ntasGet(c)})))})));
  if(tok!==liveTok||!box.isConnected)return;
- if(res.every(r=>r.err)){nxBadge(s,null);nx.textContent="Live times unavailable";upd.textContent="";body.innerHTML=`<p class="meta">Couldn’t reach the TTC live feed from this page (${esc(res[0].err)}). Browsers block this when the feed doesn’t allow other sites to read it, and previews inside Claude also block outside requests. Open the file in your browser, or use the links below.</p><p style="display:flex;gap:8px;flex-wrap:wrap">${dirs.map(([n,c])=>`<a class="btn alt" target="_blank" rel="noopener" href="https://www.transsee.ca/predict?s=ttcsubwaynew.1.${c}">${n} on TransSee</a>`).join("")}</p>`;return}
- {const b=soonest(res);nxBadge(s,b?(b.n<1?"Due":Math.round(b.n)+" min")+" · "+b.d:null);nx.innerHTML=b?`Next train: ${b.n<1?"Due":Math.round(b.n)+" min"}<small>toward ${b.d}</small>`:"No trains listed right now"}
- body.innerHTML=res.map(r=>`<div class="dir"><b>${r.n}</b>${r.err?`<span class="meta">Unavailable (${esc(r.err)})</span>`:r.t.length?r.t.slice(0,4).map(tmHTML).join(""):`<span class="meta">No trains listed right now</span>`}</div>`).join("")+`<details><summary>Raw feed</summary>${res.map(r=>`<pre>${r.c}: ${esc((r.raw||r.err||"").slice(0,500))}</pre>`).join("")}</details>`;
+ const flat=all.flatMap(st=>st.res.map(r=>({...r,k:st.k})));
+ if(flat.every(r=>r.err)){nxBadge(s,null);nx.textContent="Live times unavailable";upd.textContent="";
+  body.innerHTML=`<p class="meta">Couldn’t reach the TTC live feed from this page (${esc(flat[0].err)}). Browsers block this when the feed doesn’t allow other sites to read it, and previews inside Claude also block outside requests. Open the file in your own browser, or use the links below.</p><p style="display:flex;gap:8px;flex-wrap:wrap">${flat.map(r=>`<a class="btn alt" target="_blank" rel="noopener" href="https://www.transsee.ca/predict?s=ttcsubwaynew.${r.k}.${r.c}">${sets.length>1?"L"+r.k+" ":""}${r.n.replace(/ \(.*\)/,"")} on TransSee</a>`).join("")}</p>`;return}
+ let b=null;flat.forEach(r=>{if(r.err)return;const n=r.t.map(Number).find(Number.isFinite);if(n!==undefined&&(!b||n<b.n))b={n,d:r.n,k:r.k}});
+ const tag=b?(sets.length>1?"Line "+b.k+" · ":"")+b.d:"";
+ nxBadge(s,b?fmtT(b.n)+" · "+(sets.length>1?"L"+b.k+" ":"")+b.d.replace(/ \(.*\)/,""):null);
+ nx.innerHTML=b?`Next train: ${fmtT(b.n)}<small>${tag}</small>`:"No trains listed right now";
+ body.innerHTML=all.map(st=>`<div class="dir" style="border-left:5px solid ${L[st.k].c};padding-left:8px;margin-top:10px"><b>${L[st.k].n}</b>`+st.res.map(r=>`<div style="margin-top:4px"><span class="meta">${r.n}</span><br>${r.err?`<span class="meta">Unavailable (${esc(r.err)})</span>`:r.t.length?r.t.slice(0,4).map(tmHTML).join(""):`<span class="meta">No trains listed right now</span>`}</div>`).join("")+(st.k==="5"||st.k==="6"?`<div class="meta" style="margin-top:4px">Times on this line can be schedule-based estimates.</div>`:"")+`</div>`).join("")+`<details><summary>Raw feed</summary>${flat.map(r=>`<pre>L${r.k} ${r.c}: ${esc((r.raw||r.err||"").slice(0,500))}</pre>`).join("")}</details>`;
  upd.textContent="Updated "+new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit",second:"2-digit"});
 }
 const _spot2=spot;
-spot=function(s){_spot2(s);clearInterval(liveTimer);nxBadge(s,null);if(!LIVE[s])return;const ph=$("#stphoto");if(!ph)return;
+spot=function(s){_spot2(s);clearInterval(liveTimer);nxBadge(s,null);if(!liveSets(s).length)return;const ph=$("#stphoto");if(!ph)return;
  const box=document.createElement("div");box.className="live";
- box.innerHTML=`<h3><span>Live departures · Line 1</span><button class="btn alt" type="button">Refresh</button></h3>${s==="Dundas"?`<p class="meta" style="margin:0 0 6px">The TTC now calls this stop TMU station.</p>`:""}<div class="nx">Loading…</div><div class="lb meta"></div><div class="meta lu" style="margin-top:6px"></div>`;
+ box.innerHTML=`<h3><span>Live departures</span><button class="btn alt" type="button">Refresh</button></h3>${s==="Dundas"?`<p class="meta" style="margin:0 0 6px">The TTC now calls this stop TMU station.</p>`:""}<div class="nx">Loading…</div><div class="lb meta"></div><div class="meta lu" style="margin-top:6px"></div>`;
  ph.insertAdjacentElement("afterend",box);const run=()=>liveLoad(s,box);box.querySelector("button").onclick=run;run();liveTimer=setInterval(()=>{if(box.isConnected&&!document.hidden)run()},30000)};
 info();go();spot("Union");
 </script>
